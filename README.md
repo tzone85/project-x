@@ -85,6 +85,20 @@ Optional runtimes: `codex` (OpenAI), `gemini` (Google).
 >
 > If you enable the `fallback` section in `px.yaml`, `px` can stay Claude-first but ask for approval before switching exhausted Claude work over to OpenAI. Planner/review/rebase calls first try the OpenAI API and can then ask again to continue on local `codex` if the API quota is exhausted, while in-progress coding stories can hand off to the configured runtime in the same worktree with generated `PX_HANDOFF.md`, `PX_HANDOFF.json`, and `PX_TRANSCRIPT_SNAPSHOT.log` artifacts.
 
+Use this fallback block in your `px.yaml` or `px.config.yaml`:
+
+```yaml
+fallback:
+  enabled: true
+  require_approval: true
+  llm_model: gpt-5.4
+  runtime: codex
+  runtime_model: gpt-5.4
+  handoff_output_lines: 80
+```
+
+The repo also includes the same settings in [`px.config.example.yaml`](px.config.example.yaml), and the live demo uses them from [`demo.config.yaml`](demo.config.yaml).
+
 ### Install
 
 ```bash
