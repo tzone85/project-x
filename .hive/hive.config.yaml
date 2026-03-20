@@ -1,0 +1,136 @@
+version: "1.0"
+models:
+  tech_lead:
+    provider: anthropic
+    model: claude-opus-4-6
+    max_tokens: 16000
+    temperature: 0.7
+    cli_tool: claude
+    safety_mode: unsafe
+    personas: []
+  senior:
+    provider: anthropic
+    model: claude-opus-4-6
+    max_tokens: 8000
+    temperature: 0.5
+    cli_tool: claude
+    safety_mode: unsafe
+    personas: []
+  intermediate:
+    provider: anthropic
+    model: claude-sonnet-4-5-20250929
+    max_tokens: 4000
+    temperature: 0.3
+    cli_tool: claude
+    safety_mode: unsafe
+    personas: []
+  junior:
+    provider: anthropic
+    model: claude-sonnet-4-5-20250929
+    max_tokens: 4000
+    temperature: 0.2
+    cli_tool: claude
+    safety_mode: unsafe
+    personas: []
+  qa:
+    provider: anthropic
+    model: claude-sonnet-4-5-20250929
+    max_tokens: 8000
+    temperature: 0.2
+    cli_tool: claude
+    safety_mode: unsafe
+    personas: []
+  feature_test:
+    provider: anthropic
+    model: claude-opus-4-6
+    max_tokens: 16000
+    temperature: 0.3
+    cli_tool: claude
+    safety_mode: unsafe
+    personas: []
+  auditor:
+    provider: anthropic
+    model: claude-opus-4-6
+    max_tokens: 16000
+    temperature: 0.3
+    cli_tool: claude
+    safety_mode: unsafe
+    personas: []
+scaling:
+  senior_capacity: 20
+  junior_max_complexity: 3
+  intermediate_max_complexity: 5
+  refactor:
+    enabled: true
+    capacity_percent: 10
+    allow_without_feature_work: true
+integrations:
+  source_control:
+    provider: github
+  project_management:
+    provider: none
+  autonomy:
+    level: full
+    allow_preexisting_ci_failures: true
+github:
+  base_branch: main
+  pr_template: |
+    ## Story: {story_id}
+
+    {description}
+
+    ### Acceptance Criteria
+    {acceptance_criteria}
+
+    ### Changes
+    {changes}
+qa:
+  quality_checks:
+    - npm run lint
+    - npm run type-check
+  build_command: npm run build
+agents:
+  poll_interval: 5000
+  max_retries: 2
+  checkpoint_threshold: 14000
+  llm_timeout_ms: 1800000
+  llm_max_retries: 2
+  chrome_enabled: auto
+manager:
+  fast_poll_interval: 15000
+  slow_poll_interval: 60000
+  stuck_threshold_ms: 120000
+  nudge_cooldown_ms: 300000
+  max_stuck_nudges_per_story: 1
+  screen_static_inactivity_threshold_ms: 600000
+  completion_classifier:
+    cli_tool: codex
+    model: gpt-5.2-codex
+    timeout_ms: 300000
+  lock_stale_ms: 120000
+  git_timeout_ms: 30000
+  gh_timeout_ms: 60000
+  tmux_timeout_ms: 10000
+  tech_lead_max_age_hours: 6
+  auditor_interval_ms: 300000
+  auditor_enabled: true
+merge_queue:
+  max_age_hours: 1
+logging:
+  level: info
+  retention_days: 30
+cluster:
+  enabled: false
+  node_id: node-local
+  listen_host: 127.0.0.1
+  listen_port: 8787
+  public_url: http://127.0.0.1:8787
+  peers: []
+  heartbeat_interval_ms: 2000
+  election_timeout_min_ms: 3000
+  election_timeout_max_ms: 6000
+  sync_interval_ms: 5000
+  request_timeout_ms: 5000
+  story_similarity_threshold: 0.92
+e2e_tests:
+  path: ./e2e
