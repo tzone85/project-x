@@ -45,6 +45,11 @@ type MockRunner struct {
 	callIndex int
 }
 
+// NewMockRunner creates a new MockRunner ready for use.
+func NewMockRunner() *MockRunner {
+	return &MockRunner{}
+}
+
 // AddResponse queues an output/error pair to be returned on the next call.
 func (m *MockRunner) AddResponse(output string, err error) {
 	m.responses = append(m.responses, mockResponse{output: output, err: err})
