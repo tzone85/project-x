@@ -74,6 +74,7 @@ func NewRootCmd() *cobra.Command {
 	cmd.AddCommand(newEventsCmd())
 	cmd.AddCommand(newStatusCmd())
 	cmd.AddCommand(newCostCmd())
+	cmd.AddCommand(newPlanCmd())
 	return cmd
 }
 
