@@ -3,22 +3,22 @@
 package graph
 
 import (
-	"fmt"
+	"errors"
 	"sort"
 	"sync"
 )
 
 // ErrCycleDetected is returned when adding an edge would create a cycle.
-var ErrCycleDetected = fmt.Errorf("cycle detected in graph")
+var ErrCycleDetected = errors.New("cycle detected in graph")
 
 // ErrNodeNotFound is returned when referencing a node that doesn't exist.
-var ErrNodeNotFound = fmt.Errorf("node not found")
+var ErrNodeNotFound = errors.New("node not found")
 
 // ErrDuplicateNode is returned when adding a node that already exists.
-var ErrDuplicateNode = fmt.Errorf("duplicate node")
+var ErrDuplicateNode = errors.New("duplicate node")
 
 // ErrSelfEdge is returned when adding an edge from a node to itself.
-var ErrSelfEdge = fmt.Errorf("self-referencing edge not allowed")
+var ErrSelfEdge = errors.New("self-referencing edge not allowed")
 
 // DAG is a thread-safe directed acyclic graph keyed by string node IDs.
 // Edge semantics: edges[from][to] means "from depends on to".
@@ -135,9 +135,10 @@ func (d *DAG) hasPath(src, dst string) bool {
 	queue := []string{src}
 	visited[src] = true
 
-	for len(queue) > 0 {
-		current := queue[0]
-		queue = queue[1:]
+	head := 0
+	for head < len(queue) {
+		current := queue[head]
+		head++
 
 		if current == dst {
 			return true
@@ -328,35 +329,38 @@ func (d *DAG) EdgeCount() int {
 // kahnSort performs Kahn's algorithm and returns the sorted nodes.
 // Must be called with d.mu held (at least RLock).
 func (d *DAG) kahnSort() []string {
-	// Build in-degree map (count of forward edges pointing into each node)
-	inDegree := make(map[string]int, len(d.nodes))
+	// depCount tracks how many unresolved dependencies each node has
+	depCount := make(map[string]int, len(d.nodes))
 	for id := range d.nodes {
-		inDegree[id] = len(d.edges[id])
+		depCount[id] = len(d.edges[id])
 	}
 
-	// Seed queue with nodes that have no outgoing dependencies
+	// Seed queue with nodes that have no dependencies
 	var queue []string
-	for id, deg := range inDegree {
-		if deg == 0 {
+	for id, count := range depCount {
+		if count == 0 {
 			queue = append(queue, id)
 		}
 	}
 	sort.Strings(queue)
 
 	var sorted []string
-	for len(queue) > 0 {
-		node := queue[0]
-		queue = queue[1:]
+	head := 0
+	for head < len(queue) {
+		node := queue[head]
+		head++
 		sorted = append(sorted, node)
 
-		// For each node that depends on this one, reduce its in-degree
+		// For each node that depends on this one, decrement its dep count
+		var newReady []string
 		for dep := range d.reverse[node] {
-			inDegree[dep]--
-			if inDegree[dep] == 0 {
-				queue = append(queue, dep)
-				sort.Strings(queue) // maintain deterministic order
+			depCount[dep]--
+			if depCount[dep] == 0 {
+				newReady = append(newReady, dep)
 			}
 		}
+		sort.Strings(newReady)
+		queue = append(queue, newReady...)
 	}
 
 	return sorted

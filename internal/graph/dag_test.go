@@ -178,6 +178,19 @@ func TestRemoveEdgeNodeNotFound(t *testing.T) {
 	}
 }
 
+// --- RemoveEdge of non-existent edge (idempotent) ---
+
+func TestRemoveEdgeNonExistentIsNoOp(t *testing.T) {
+	d := New()
+	_ = d.AddNode("A")
+	_ = d.AddNode("B")
+	// No edge between A and B — remove should succeed silently
+	err := d.RemoveEdge("A", "B")
+	if err != nil {
+		t.Fatalf("RemoveEdge on non-existent edge should be no-op, got %v", err)
+	}
+}
+
 // --- HasCycle Tests ---
 
 func TestHasCycleEmpty(t *testing.T) {
@@ -521,6 +534,64 @@ func TestComputeWavesDisconnectedComponents(t *testing.T) {
 	assertWaveContains(t, waves[1], 2, []string{"B", "Y"})
 }
 
+// --- TopologicalSort Cycle Error Test ---
+
+func TestTopologicalSortCycleError(t *testing.T) {
+	// Build a graph then force a cycle by bypassing AddEdge validation.
+	// Since AddEdge prevents cycles, we test via ComputeWaves/TopologicalSort
+	// on a graph where AddEdge correctly rejects the cycle.
+	d := New()
+	_ = d.AddNode("A")
+	_ = d.AddNode("B")
+	_ = d.AddEdge("A", "B")
+
+	// Verify TopologicalSort works on valid graph
+	result, err := d.TopologicalSort()
+	if err != nil {
+		t.Fatalf("unexpected error on valid graph: %v", err)
+	}
+	if len(result) != 2 {
+		t.Fatalf("expected 2 nodes, got %d", len(result))
+	}
+
+	// Verify the cycle is rejected at AddEdge level
+	err = d.AddEdge("B", "A")
+	if !errors.Is(err, ErrCycleDetected) {
+		t.Fatalf("expected ErrCycleDetected, got %v", err)
+	}
+}
+
+// --- RemoveNode with dependents ---
+
+func TestRemoveNodeWithDependentsCleansEdges(t *testing.T) {
+	d := New()
+	_ = d.AddNode("A")
+	_ = d.AddNode("B")
+	_ = d.AddNode("C")
+	_ = d.AddEdge("B", "A") // B depends on A
+	_ = d.AddEdge("C", "A") // C depends on A
+
+	// Removing A should clean all edges pointing to/from A
+	_ = d.RemoveNode("A")
+
+	if d.NodeCount() != 2 {
+		t.Fatalf("expected 2 nodes, got %d", d.NodeCount())
+	}
+	if d.EdgeCount() != 0 {
+		t.Fatalf("expected 0 edges, got %d", d.EdgeCount())
+	}
+
+	// B and C should now be root nodes with no dependencies
+	waves, err := d.ComputeWaves()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(waves) != 1 {
+		t.Fatalf("expected 1 wave (B and C now independent), got %d", len(waves))
+	}
+	assertWave(t, waves[0], 1, []string{"B", "C"})
+}
+
 // --- Thread Safety Tests ---
 
 func TestConcurrentReads(t *testing.T) {
@@ -543,6 +614,41 @@ func TestConcurrentReads(t *testing.T) {
 			_ = d.NodeCount()
 			_ = d.EdgeCount()
 			_ = d.HasCycle()
+		}()
+	}
+	wg.Wait()
+}
+
+func TestConcurrentReadWrite(t *testing.T) {
+	d := New()
+	for i := 0; i < 50; i++ {
+		_ = d.AddNode(fmt.Sprintf("N%d", i))
+	}
+
+	var wg sync.WaitGroup
+	// Writers: add edges
+	for i := 0; i < 5; i++ {
+		wg.Add(1)
+		go func(offset int) {
+			defer wg.Done()
+			for j := 1; j < 10; j++ {
+				from := fmt.Sprintf("N%d", offset*10+j)
+				to := fmt.Sprintf("N%d", offset*10+j-1)
+				_ = d.AddEdge(from, to)
+			}
+		}(i)
+	}
+	// Readers: concurrent queries
+	for i := 0; i < 5; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			_ = d.Nodes()
+			_ = d.NodeCount()
+			_ = d.EdgeCount()
+			_ = d.HasCycle()
+			_, _ = d.TopologicalSort()
+			_, _ = d.ComputeWaves()
 		}()
 	}
 	wg.Wait()
@@ -587,33 +693,22 @@ func assertWave(t *testing.T, w Wave, expectedNum int, expectedNodes []string) {
 	if w.Number != expectedNum {
 		t.Fatalf("expected wave %d, got %d", expectedNum, w.Number)
 	}
-	sort.Strings(w.Nodes)
-	sort.Strings(expectedNodes)
-	if len(w.Nodes) != len(expectedNodes) {
-		t.Fatalf("wave %d: expected nodes %v, got %v", expectedNum, expectedNodes, w.Nodes)
+	got := make([]string, len(w.Nodes))
+	copy(got, w.Nodes)
+	want := make([]string, len(expectedNodes))
+	copy(want, expectedNodes)
+	sort.Strings(got)
+	sort.Strings(want)
+	if len(got) != len(want) {
+		t.Fatalf("wave %d: expected nodes %v, got %v", expectedNum, want, got)
 	}
-	for i := range expectedNodes {
-		if w.Nodes[i] != expectedNodes[i] {
-			t.Fatalf("wave %d: expected nodes %v, got %v", expectedNum, expectedNodes, w.Nodes)
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("wave %d: expected nodes %v, got %v", expectedNum, want, got)
 		}
 	}
 }
 
-func assertWaveContains(t *testing.T, w Wave, expectedNum int, expectedNodes []string) {
-	t.Helper()
-	if w.Number != expectedNum {
-		t.Fatalf("expected wave %d, got %d", expectedNum, w.Number)
-	}
-	sort.Strings(w.Nodes)
-	sort.Strings(expectedNodes)
-	if len(w.Nodes) != len(expectedNodes) {
-		t.Fatalf("wave %d: expected %d nodes %v, got %d nodes %v",
-			expectedNum, len(expectedNodes), expectedNodes, len(w.Nodes), w.Nodes)
-	}
-	for i := range expectedNodes {
-		if w.Nodes[i] != expectedNodes[i] {
-			t.Fatalf("wave %d: expected nodes %v, got %v", expectedNum, expectedNodes, w.Nodes)
-		}
-	}
-}
+// assertWaveContains is an alias for assertWave — both check exact match.
+var assertWaveContains = assertWave
 
