@@ -6,14 +6,13 @@ Hand off a requirement. Walk away. Come back to merged PRs.
 
 `px` decomposes natural-language requirements into atomic stories, dispatches AI coding agents across parallel waves, and drives each story through code review, QA, rebase with LLM-powered conflict resolution, and auto-merge — all while enforcing cost budgets and monitoring session health.
 
-<!-- After generating: ![px demo](demo.gif) -->
 <p align="center">
-  <img src="demo.gif" alt="px demo" width="800" />
+  <img src="https://vhs.charm.sh/vhs-4qlNhlDYScFCfkNGRcUxEc.gif" alt="px demo" width="800" />
 </p>
 
 ## Demo
 
-The README preview is generated from the checked-in [`demo.tape`](demo.tape) VHS script, so the repository includes both the rendered demo (`demo.gif`) and the source that produced it.
+The README now embeds a published VHS render generated from the checked-in [`demo.tape`](demo.tape) script, while the repository still keeps the source tape and a local `demo.gif` render for iteration.
 
 The tape walks through a representative `px` flow:
 
