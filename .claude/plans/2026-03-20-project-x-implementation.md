@@ -718,7 +718,25 @@ git commit -m "feat: async event projector with channel-based decoupling"
 
 ---
 
-### Task 1.8: Wire State Layer into CLI
+### Task 1.8: Structured Logging Infrastructure
+
+**Files:**
+- Create: `internal/logging/logger.go`
+
+- [ ] **Step 1: Implement slog logger factory** — configurable log level from config, JSON output to stderr + rotated log file (`~/.px/logs/px.log`), component-tagged child loggers (e.g., `logger.With("component", "monitor")`), story_id context when applicable.
+
+- [ ] **Step 2: Wire into CLI root** — initialize logger in `PersistentPreRunE`, make available to all subcommands.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add internal/logging/
+git commit -m "feat: structured slog logging with JSON output, file rotation, and component tagging"
+```
+
+---
+
+### Task 1.9: Wire State Layer into CLI
 
 **Files:**
 - Modify: `internal/cli/root.go`
@@ -823,9 +841,11 @@ git commit -m "feat: Anthropic API client with token usage extraction"
 - Create: `internal/llm/retry.go`, `internal/llm/retry_test.go`
 - Create: `internal/llm/replay.go`
 
-- [ ] **Step 1: Implement OpenAI client** — chat completions API, token extraction from `usage`.
+- [ ] **Step 1: Write OpenAI client tests** — response parsing, error handling, token extraction from `usage` field.
 
-- [ ] **Step 2: Write retry wrapper tests** — retries on retryable errors, stops on fatal, respects max attempts, exponential backoff.
+- [ ] **Step 2: Implement OpenAI client** — chat completions API, token extraction from `usage`.
+
+- [ ] **Step 3: Write retry wrapper tests** — retries on retryable errors, stops on fatal, respects max attempts, exponential backoff.
 
 - [ ] **Step 3: Implement RetryClient** — wraps any `Client`, configurable max attempts and base delay.
 
@@ -847,8 +867,11 @@ git commit -m "feat: OpenAI client, retry wrapper with backoff, and replay test 
 - Create: `internal/cost/ledger.go`
 - Create: `internal/cost/ledger_test.go`
 - Create: `internal/cost/pricing.go`
+- Create: `internal/cost/pricing_test.go`
 
-- [ ] **Step 1: Write ledger tests** — record usage, query by story/requirement/day, total computation.
+- [ ] **Step 1: Write pricing tests** — ComputeCost for known models, unknown model fallback, zero tokens, rounding.
+
+- [ ] **Step 2: Write ledger tests** — record usage, query by story/requirement/day, total computation.
 
 - [ ] **Step 2: Run tests — verify they fail**
 
@@ -919,7 +942,7 @@ Produces: `px plan` command that decomposes requirements into stories.
 - Create: `internal/git/ops.go`, `internal/git/ops_test.go`
 - Create: `internal/git/worktree.go`, `internal/git/worktree_test.go`
 - Create: `internal/git/github.go`, `internal/git/github_test.go`
-- Create: `internal/git/scan.go`
+- Create: `internal/git/scan.go`, `internal/git/scan_test.go`
 
 - [ ] **Step 1: Write and implement git ops** — FetchBranch, RebaseOnto, Diff, MergeBase, DeleteRemoteBranch. Use `CommandRunner` interface for testability.
 
@@ -941,9 +964,9 @@ git commit -m "feat: git operations, worktree management, GitHub PR integration,
 
 **Files:**
 - Create: `internal/graph/dag.go`, `internal/graph/dag_test.go`
-- Create: `internal/graph/topo.go`
+- Create: `internal/graph/topo.go`, `internal/graph/topo_test.go`
 
-- [ ] **Step 1: Write DAG tests** — add nodes/edges, detect cycles, topo sort, ReadyNodes, wave grouping.
+- [ ] **Step 1: Write DAG tests** (in `dag_test.go`: add nodes/edges, detect cycles; in `topo_test.go`: topo sort ordering, ReadyNodes, wave grouping) — add nodes/edges, detect cycles, topo sort, ReadyNodes, wave grouping.
 
 - [ ] **Step 2: Implement** — adjacency list, in-degree tracking, Kahn's algorithm, wave grouping by topological layer.
 
@@ -1110,14 +1133,15 @@ git commit -m "feat: pipeline stage interface and runner with per-stage retry po
 ### Task 4.5: Pipeline Stages
 
 **Files:**
-- Create: `internal/pipeline/autocommit.go`, `internal/pipeline/diffcheck.go`
+- Create: `internal/pipeline/autocommit.go`, `internal/pipeline/autocommit_test.go`
+- Create: `internal/pipeline/diffcheck.go`, `internal/pipeline/diffcheck_test.go`
 - Create: `internal/pipeline/review.go`, `internal/pipeline/review_test.go`
 - Create: `internal/pipeline/qa.go`, `internal/pipeline/qa_test.go`
 - Create: `internal/pipeline/rebase.go`, `internal/pipeline/rebase_test.go`
 - Create: `internal/pipeline/merge.go`, `internal/pipeline/merge_test.go`
-- Create: `internal/pipeline/cleanup.go`
+- Create: `internal/pipeline/cleanup.go`, `internal/pipeline/cleanup_test.go`
 
-- [ ] **Step 1: Implement AutoCommitStage and DiffCheckStage.**
+- [ ] **Step 1: Write and implement AutoCommitStage and DiffCheckStage** (with tests first).
 
 - [ ] **Step 2: Write and implement ReviewStage** — LLM review with retry/escalation logic.
 
@@ -1141,7 +1165,7 @@ git commit -m "feat: all pipeline stages - autocommit, diffcheck, review, qa, re
 
 **Files:**
 - Create: `internal/monitor/dispatcher.go`, `internal/monitor/dispatcher_test.go`
-- Create: `internal/monitor/executor.go`
+- Create: `internal/monitor/executor.go`, `internal/monitor/executor_test.go`
 
 - [ ] **Step 1: Write and implement Dispatcher** — wave dispatch from DAG, sequential-first ordering, file overlap filtering, role assignment.
 
@@ -1164,7 +1188,9 @@ git commit -m "feat: wave dispatcher with overlap filtering and executor with ru
 
 - [ ] **Step 2: Implement slim Poller** (~150 lines) — poll, check health, hand off, trigger wave.
 
-- [ ] **Step 3: Verify under 200 lines.**
+- [ ] **Step 3: Implement graceful shutdown** — on context cancellation: stop polling, wait for in-flight pipeline stages (30s timeout), drain projection channel, leave tmux sessions alive, close stores. Test the shutdown sequence.
+
+- [ ] **Step 4: Verify poller under 200 lines.**
 
 - [ ] **Step 4: Run tests, commit**
 
@@ -1242,7 +1268,7 @@ git commit -m "feat: scrollable TUI dashboard with 6 panels, viewport navigation
 
 - [ ] **Step 1: Write handler tests.**
 
-- [ ] **Step 2: Implement server** — localhost-only, graceful shutdown.
+- [ ] **Step 2: Implement server** — binds to `127.0.0.1` only, graceful shutdown. Add `--bind` flag with security warning if set to `0.0.0.0`.
 
 - [ ] **Step 3: Implement REST handlers** — all `/api/*` endpoints.
 
@@ -1355,12 +1381,16 @@ git commit -m "ci: GitHub Actions for CI testing and GoReleaser binary releases"
 
 - [ ] **Step 1: Write README** — description, features, quick start, install, usage, architecture, config reference.
 
-- [ ] **Step 2: Implement remaining CLI commands** — agents, config, gc, archive.
+- [ ] **Step 2: Write CONTRIBUTING** — dev setup, code style, test conventions, PR process, architecture overview.
 
-- [ ] **Step 3: Commit**
+- [ ] **Step 3: Create issue templates** — `.github/ISSUE_TEMPLATE/bug_report.yml`, `feature_request.yml`, `runtime_plugin.yml`.
+
+- [ ] **Step 4: Implement remaining CLI commands** — agents, config, gc, archive.
+
+- [ ] **Step 5: Commit**
 
 ```bash
-git commit -m "docs: README and remaining CLI commands"
+git commit -m "docs: README, CONTRIBUTING, issue templates, and remaining CLI commands"
 ```
 
 ---
@@ -1411,10 +1441,10 @@ Phase 1 (Foundation)
 
 | Phase | Tasks | Focus |
 |-------|-------|-------|
-| 1 | 8 | Foundation & State Layer |
+| 1 | 9 | Foundation, State Layer & Logging |
 | 2 | 7 | LLM Clients & Cost Protection |
 | 3 | 5 | Git, Graph & Planner |
 | 4 | 9 | Runtime, Pipeline & Execution |
 | 5 | 4 | Dashboards |
 | 6 | 4 | Integration & Release |
-| **Total** | **37** | |
+| **Total** | **38** | |
