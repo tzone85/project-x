@@ -1,0 +1,75 @@
+# px configuration file
+# Copy this to px.config.yaml and customize as needed.
+# All values shown are defaults — omit any section to use defaults.
+
+# Cost protection & budget enforcement (Section 1)
+budget:
+  max_cost_per_story_usd: 2.00        # Max API spend per story
+  max_cost_per_requirement_usd: 20.00  # Max API spend per requirement
+  max_cost_per_day_usd: 50.00          # Max API spend per day
+  warning_threshold_pct: 80            # Emit warning at this % of budget
+  hard_stop: true                      # Hard stop on budget breach
+
+# Tmux session health & recovery (Section 2)
+sessions:
+  stale_threshold_s: 180      # Seconds before marking session stale
+  on_dead: redispatch          # Action on dead session: redispatch | restart | ignore
+  on_stale: restart            # Action on stale session: redispatch | restart | ignore
+  max_recovery_attempts: 2     # Max recovery attempts before giving up
+
+# Pipeline stage retry policies (Section 4)
+pipeline:
+  stages:
+    review:
+      max_retries: 2
+      on_exhaust: escalate          # Re-assign to senior agent role
+    qa:
+      max_retries: 3
+      on_exhaust: pause_requirement # Pause the entire requirement
+    rebase:
+      max_retries: 2
+      on_exhaust: pause_requirement
+    merge:
+      max_retries: 1
+      on_exhaust: pause_requirement
+
+# Planner quality criteria (Section 6)
+planning:
+  required_fields:
+    - title
+    - description
+    - acceptance_criteria
+    - owned_files
+    - complexity
+    - depends_on
+  max_story_complexity: 8       # Max complexity score per story
+  max_stories_per_requirement: 15
+  enforce_file_ownership: true  # No two stories own the same file
+
+# Runtime routing (Section 7)
+routing:
+  strategy: cost_optimized  # cost_optimized | performance
+  preferences:
+    - role: junior
+      prefer: codex
+      fallback: claude-code
+    - role: senior
+      prefer: claude-code
+      fallback: gemini
+
+# Model pricing table (per 1M tokens)
+pricing:
+  anthropic/claude-opus-4-20250514:
+    input_per_1m: 15.00
+    output_per_1m: 75.00
+  anthropic/claude-sonnet-4-20250514:
+    input_per_1m: 3.00
+    output_per_1m: 15.00
+  openai/gpt-4o-mini:
+    input_per_1m: 0.15
+    output_per_1m: 0.60
+
+# Workspace settings
+workspace:
+  log_level: info   # debug | info | warn | error
+  data_dir: ~/.px   # Data directory for logs, SQLite, events
