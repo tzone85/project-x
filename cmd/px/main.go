@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/tzone85/project-x/internal/cli"
 	"github.com/tzone85/project-x/internal/config"
 )
 
@@ -63,7 +64,19 @@ func rootCmd() *cobra.Command {
 	cmd.PersistentFlags().StringVar(&configPath, "config", config.DefaultConfigPath(), "path to config file")
 	cmd.PersistentFlags().BoolVar(&verbose, "verbose", false, "enable debug logging")
 
+	// Config accessor for subcommands that need it
+	cfgFn := func() config.Config {
+		cfg, _ := ConfigFromContext(cmd.Context())
+		return cfg
+	}
+
 	cmd.AddCommand(versionCmd())
+	cmd.AddCommand(cli.NewInitCmd())
+	cmd.AddCommand(cli.NewMigrateCmd(cfgFn))
+	cmd.AddCommand(cli.NewCostCmd(cfgFn))
+	cmd.AddCommand(cli.NewStatusCmd(cfgFn))
+	cmd.AddCommand(cli.NewPlanCmd())
+	cmd.AddCommand(cli.NewResumeCmd())
 
 	return cmd
 }
