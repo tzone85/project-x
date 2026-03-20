@@ -8,39 +8,56 @@ import (
 
 func TestCreateWorktree_CallsCorrectCommands(t *testing.T) {
 	mock := &MockRunner{}
-	mock.AddResponse("", nil) // git worktree add
+	mock.AddResponse("", nil) // git worktree prune
+	mock.AddResponse("", nil) // git worktree remove (best-effort cleanup)
+	mock.AddResponse("", nil) // git worktree add -b
 
 	err := CreateWorktree(mock, "/repo", "/tmp/worktree-abc", "px/story-123")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if len(mock.Commands) != 1 {
-		t.Fatalf("expected 1 command, got %d", len(mock.Commands))
+	// Find the worktree add command
+	found := false
+	for _, cmd := range mock.Commands {
+		argsStr := strings.Join(cmd.Args, " ")
+		if strings.Contains(argsStr, "worktree add -b px/story-123") {
+			found = true
+			if cmd.Dir != "/repo" {
+				t.Errorf("expected dir /repo, got %s", cmd.Dir)
+			}
+		}
 	}
-
-	cmd := mock.Commands[0]
-	if cmd.Dir != "/repo" {
-		t.Errorf("expected dir /repo, got %s", cmd.Dir)
+	if !found {
+		t.Error("expected 'git worktree add -b' command")
 	}
+}
 
-	argsStr := strings.Join(cmd.Args, " ")
-	expected := "worktree add -b px/story-123 /tmp/worktree-abc"
-	if argsStr != expected {
-		t.Errorf("expected %q, got %q", expected, argsStr)
+func TestCreateWorktree_RetryOnBranchExists(t *testing.T) {
+	mock := &MockRunner{}
+	mock.AddResponse("", nil)                              // prune
+	mock.AddResponse("", nil)                              // remove (best-effort)
+	mock.AddResponse("", errors.New("branch already exists")) // first add fails
+	mock.AddResponse("", nil)                              // branch -D
+	mock.AddResponse("", nil)                              // second add succeeds
+
+	err := CreateWorktree(mock, "/repo", "/tmp/worktree-abc", "px/story-123")
+	if err != nil {
+		t.Fatalf("expected retry to succeed, got: %v", err)
 	}
 }
 
 func TestCreateWorktree_PropagatesError(t *testing.T) {
 	mock := &MockRunner{}
-	mock.AddResponse("", errors.New("already exists"))
+	mock.AddResponse("", nil)                        // prune
+	mock.AddResponse("", nil)                        // remove
+	mock.AddResponse("", errors.New("fatal error"))  // first add fails
+	mock.AddResponse("", nil)                        // branch -D
+	mock.AddResponse("", errors.New("fatal error"))  // second add also fails
 
 	err := CreateWorktree(mock, "/repo", "/tmp/worktree-abc", "px/story-123")
 	if err == nil {
 		t.Fatal("expected error, got nil")
-	}
-	if !strings.Contains(err.Error(), "already exists") {
-		t.Errorf("expected error to contain 'already exists', got %q", err.Error())
 	}
 }
 

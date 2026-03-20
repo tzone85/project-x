@@ -88,16 +88,18 @@ func (c *ClaudeCodeRuntime) Capabilities() RuntimeCapabilities {
 }
 
 // buildCommand constructs the claude CLI invocation string.
+// The goal is piped via stdin using a heredoc to avoid shell argument
+// length limits and special character issues with long prompts.
 func (c *ClaudeCodeRuntime) buildCommand(cfg SessionConfig) string {
 	var parts []string
-	parts = append(parts, "claude", "-p")
-
-	if cfg.Model != "" {
-		parts = append(parts, "--model", cfg.Model)
-	}
+	parts = append(parts, "claude")
 
 	if c.godmode {
 		parts = append(parts, "--dangerously-skip-permissions")
+	}
+
+	if cfg.Model != "" {
+		parts = append(parts, "--model", cfg.Model)
 	}
 
 	if cfg.SystemPrompt != "" {
@@ -108,9 +110,14 @@ func (c *ClaudeCodeRuntime) buildCommand(cfg SessionConfig) string {
 		parts = append(parts, "--output-file", cfg.LogFile)
 	}
 
-	parts = append(parts, shellQuote(cfg.Goal))
+	// Pipe the goal via stdin using a heredoc to avoid shell arg length limits.
+	// The -p - flag tells Claude CLI to read the prompt from stdin.
+	parts = append(parts, "-p", "-")
+	cmd := strings.Join(parts, " ")
 
-	return strings.Join(parts, " ")
+	// Use a heredoc to pipe the goal into stdin.
+	// The PX_EOF delimiter is unlikely to appear in prompts.
+	return "cat <<'PX_EOF' | " + cmd + "\n" + cfg.Goal + "\nPX_EOF"
 }
 
 // classifyOutput matches output against known patterns.
