@@ -1,0 +1,24 @@
+{
+	"stories": [
+		{
+			"id": "s-1",
+			"title": "Setup database schema",
+			"description": "Create initial tables for user management",
+			"acceptance_criteria": "Tables exist, migrations run successfully",
+			"complexity": 3,
+			"owned_files": ["migrations/001.sql", "internal/db/schema.go"],
+			"wave_hint": "sequential",
+			"depends_on": []
+		},
+		{
+			"id": "s-2",
+			"title": "Implement user CRUD API",
+			"description": "REST endpoints for user management",
+			"acceptance_criteria": "GET/POST/PUT/DELETE users functional with tests",
+			"complexity": 5,
+			"owned_files": ["internal/api/users.go", "internal/api/users_test.go"],
+			"wave_hint": "parallel",
+			"depends_on": ["s-1"]
+		}
+	]
+}
