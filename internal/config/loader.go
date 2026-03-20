@@ -72,6 +72,11 @@ func FindConfigFile() string {
 	return ""
 }
 
+// ExpandHome replaces a leading ~ with the user's home directory.
+func ExpandHome(path string) string {
+	return expandHome(path)
+}
+
 // expandHome replaces a leading ~ with the user's home directory.
 func expandHome(path string) string {
 	if path == "~" {

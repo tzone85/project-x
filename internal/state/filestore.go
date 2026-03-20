@@ -154,6 +154,16 @@ func (fs *FileStore) All() ([]Event, error) {
 	return result, nil
 }
 
+// Close closes the underlying file handle.
+func (fs *FileStore) Close() error {
+	fs.mu.Lock()
+	defer fs.mu.Unlock()
+	if fs.file != nil {
+		return fs.file.Close()
+	}
+	return nil
+}
+
 // matchesFilter checks whether an event satisfies all non-zero fields of the filter.
 func matchesFilter(evt Event, filter EventFilter) bool {
 	if filter.Type != "" && evt.Type != filter.Type {
