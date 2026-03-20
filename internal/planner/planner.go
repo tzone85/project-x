@@ -98,25 +98,80 @@ func hasValidationConfig(cfg PlannerConfig) bool {
 }
 
 // parseStories parses the LLM response content into stories.
-// It supports both envelope format {"stories": [...]} and raw array [...].
+// It handles real-world LLM output: markdown code fences, preamble text,
+// both envelope format {"stories": [...]} and raw array [...].
 func parseStories(content string) ([]PlannedStory, error) {
-	trimmed := strings.TrimSpace(content)
+	cleaned := extractJSON(content)
 
 	// Try envelope format: {"stories": [...]}
 	var envelope struct {
 		Stories []PlannedStory `json:"stories"`
 	}
-	if err := json.Unmarshal([]byte(trimmed), &envelope); err == nil && len(envelope.Stories) > 0 {
+	if err := json.Unmarshal([]byte(cleaned), &envelope); err == nil && len(envelope.Stories) > 0 {
 		return envelope.Stories, nil
 	}
 
 	// Try raw array: [...]
 	var stories []PlannedStory
-	if err := json.Unmarshal([]byte(trimmed), &stories); err == nil {
+	if err := json.Unmarshal([]byte(cleaned), &stories); err == nil {
 		return stories, nil
 	}
 
 	return nil, fmt.Errorf("unable to parse stories from LLM response: content is not valid JSON")
+}
+
+// extractJSON extracts JSON from LLM output that may contain markdown
+// code fences, preamble text, or trailing explanation.
+func extractJSON(s string) string {
+	s = strings.TrimSpace(s)
+
+	// Strip markdown code fences: ```json ... ``` or ``` ... ```
+	if strings.HasPrefix(s, "```") {
+		lines := strings.Split(s, "\n")
+		start := 1 // skip opening fence
+		end := len(lines)
+		if end > 0 && strings.TrimSpace(lines[end-1]) == "```" {
+			end-- // skip closing fence
+		}
+		s = strings.Join(lines[start:end], "\n")
+		s = strings.TrimSpace(s)
+	}
+
+	// If it starts with { or [, it's already JSON
+	if strings.HasPrefix(s, "{") || strings.HasPrefix(s, "[") {
+		return s
+	}
+
+	// Find the first { or [ in the content (skip preamble text)
+	braceIdx := strings.Index(s, "{")
+	bracketIdx := strings.Index(s, "[")
+
+	startIdx := -1
+	if braceIdx >= 0 && (bracketIdx < 0 || braceIdx < bracketIdx) {
+		startIdx = braceIdx
+	} else if bracketIdx >= 0 {
+		startIdx = bracketIdx
+	}
+
+	if startIdx < 0 {
+		return s // no JSON found, return as-is (will fail parse)
+	}
+
+	// Find the matching closing brace/bracket from the end
+	candidate := s[startIdx:]
+	if strings.HasPrefix(candidate, "{") {
+		lastBrace := strings.LastIndex(candidate, "}")
+		if lastBrace >= 0 {
+			return candidate[:lastBrace+1]
+		}
+	} else {
+		lastBracket := strings.LastIndex(candidate, "]")
+		if lastBracket >= 0 {
+			return candidate[:lastBracket+1]
+		}
+	}
+
+	return candidate
 }
 
 const plannerSystemPrompt = `You are a Tech Lead AI that decomposes software requirements into atomic, independently implementable stories.
