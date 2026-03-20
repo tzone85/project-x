@@ -6,21 +6,16 @@ Hand off a requirement. Walk away. Come back to merged PRs.
 
 `px` decomposes natural-language requirements into atomic stories, dispatches AI coding agents across parallel waves, and drives each story through code review, QA, rebase with LLM-powered conflict resolution, and auto-merge — all while enforcing cost budgets and monitoring session health.
 
-<!-- TODO: Replace with actual VHS recording -->
-<!-- vhs demo.tape -->
-<!--
-```
-px plan requirement.txt
-px plan --review 01KM5QT1...
-px resume 01KM5QT1...
-px dashboard
-px cost
-```
--->
+<!-- After generating: ![px demo](demo.gif) -->
+<p align="center">
+  <img src="demo.gif" alt="px demo" width="800" />
+</p>
 
-> **Recording a demo?** Install [VHS](https://github.com/charmbracelet/vhs) and run `vhs demo.tape` to generate the GIF below.
->
-> A `demo.tape` file will be added in a future release to auto-generate this recording.
+> **Generate the demo GIF:** Install [VHS](https://github.com/charmbracelet/vhs) (`brew install vhs`), then run:
+> ```bash
+> vhs demo.tape
+> ```
+> This produces `demo.gif` from the scripted terminal session in [`demo.tape`](demo.tape).
 
 ---
 
