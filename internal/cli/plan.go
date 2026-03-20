@@ -68,6 +68,11 @@ func runPlan(ctx context.Context, file string) error {
 
 	reqID := generateID()
 
+	// Make story IDs globally unique by prefixing with a short req identifier.
+	// The LLM generates generic IDs like "s-1", "s-2" which would collide across requirements.
+	prefix := reqID[:8] // first 8 chars of ULID is enough uniqueness
+	stories = scopeStoryIDs(stories, prefix)
+
 	reqEvt := state.NewEvent(state.EventReqSubmitted, "user", "", map[string]any{
 		"id":          reqID,
 		"title":       truncateForTitle(reqText, 80),
@@ -326,4 +331,39 @@ func buildDepMap(deps []state.StoryDep) map[string][]string {
 		m[d.StoryID] = append(m[d.StoryID], d.DependsOnID)
 	}
 	return m
+}
+
+// scopeStoryIDs prefixes all story IDs and their dependency references with
+// a unique prefix to prevent ID collisions across requirements.
+// e.g., "s-1" becomes "01KM5R-s-1"
+func scopeStoryIDs(stories []planner.PlannedStory, prefix string) []planner.PlannedStory {
+	// Build old→new ID mapping
+	idMap := make(map[string]string, len(stories))
+	for _, s := range stories {
+		idMap[s.ID] = prefix + "-" + s.ID
+	}
+
+	// Create new stories with scoped IDs and updated dependency references
+	scoped := make([]planner.PlannedStory, len(stories))
+	for i, s := range stories {
+		newDeps := make([]string, len(s.DependsOn))
+		for j, dep := range s.DependsOn {
+			if mapped, ok := idMap[dep]; ok {
+				newDeps[j] = mapped
+			} else {
+				newDeps[j] = prefix + "-" + dep
+			}
+		}
+		scoped[i] = planner.PlannedStory{
+			ID:                 idMap[s.ID],
+			Title:              s.Title,
+			Description:        s.Description,
+			AcceptanceCriteria: s.AcceptanceCriteria,
+			Complexity:         s.Complexity,
+			OwnedFiles:         s.OwnedFiles,
+			WaveHint:           s.WaveHint,
+			DependsOn:          newDeps,
+		}
+	}
+	return scoped
 }
