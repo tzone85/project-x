@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 
@@ -29,6 +30,20 @@ func NewGeminiRuntime() *GeminiRuntime {
 // Name returns "gemini".
 func (c *GeminiRuntime) Name() string {
 	return "gemini"
+}
+
+// Version detects the installed Gemini CLI version.
+func (c *GeminiRuntime) Version(runner git.CommandRunner) (string, error) {
+	out, err := runner.Run("", "gemini", "--version")
+	if err != nil {
+		return "", fmt.Errorf("gemini version: %w", err)
+	}
+	return strings.TrimSpace(out), nil
+}
+
+// Health checks the health of a Gemini session via tmux.
+func (c *GeminiRuntime) Health(runner git.CommandRunner, sessionName string) (tmux.HealthResult, error) {
+	return tmux.SessionHealth(runner, sessionName, ""), nil
 }
 
 // Spawn starts a Gemini session inside a new tmux session.
@@ -77,6 +92,7 @@ func (c *GeminiRuntime) Capabilities() RuntimeCapabilities {
 		SupportsLogFile:    false,
 		SupportsJsonOutput: false,
 		MaxPromptLength:    0,
+		CostTier:           CostTierAPI,
 	}
 }
 

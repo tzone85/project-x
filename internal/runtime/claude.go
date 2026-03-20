@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 
@@ -35,6 +36,20 @@ func NewClaudeCodeRuntime(godmode bool) *ClaudeCodeRuntime {
 // Name returns "claude-code".
 func (c *ClaudeCodeRuntime) Name() string {
 	return "claude-code"
+}
+
+// Version detects the installed Claude CLI version.
+func (c *ClaudeCodeRuntime) Version(runner git.CommandRunner) (string, error) {
+	out, err := runner.Run("", "claude", "--version")
+	if err != nil {
+		return "", fmt.Errorf("claude version: %w", err)
+	}
+	return strings.TrimSpace(out), nil
+}
+
+// Health checks the health of a Claude Code session via tmux.
+func (c *ClaudeCodeRuntime) Health(runner git.CommandRunner, sessionName string) (tmux.HealthResult, error) {
+	return tmux.SessionHealth(runner, sessionName, ""), nil
 }
 
 // Spawn starts a Claude Code session inside a new tmux session.
@@ -84,6 +99,7 @@ func (c *ClaudeCodeRuntime) Capabilities() RuntimeCapabilities {
 		SupportsLogFile:    true,
 		SupportsJsonOutput: true,
 		MaxPromptLength:    0,
+		CostTier:           CostTierSubscription,
 	}
 }
 
