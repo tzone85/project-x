@@ -11,7 +11,7 @@ func TestWatchdog_PermissionBypass(t *testing.T) {
 	mockRunner := git.NewMockRunner()
 	// ReadOutput returns permission prompt text
 	mockRunner.AddResponse("Do you want to allow this? (Y/n)", nil) // capture-pane
-	mockRunner.AddResponse("", nil)                                  // send-keys "Y"
+	mockRunner.AddResponse("", nil)                                 // send-keys "Y"
 
 	rt := runtime.NewClaudeCodeRuntime(false)
 	es := &mockEventStore{}
@@ -20,6 +20,25 @@ func TestWatchdog_PermissionBypass(t *testing.T) {
 	result := wd.Check(mockRunner, "test-session", rt)
 	if result.Action != "permission_bypass" {
 		t.Errorf("expected permission_bypass, got %s", result.Action)
+	}
+}
+
+func TestWatchdog_CodexTrustPromptBypass(t *testing.T) {
+	mockRunner := git.NewMockRunner()
+	mockRunner.AddResponse("Do you trust the contents of this directory?\nPress enter to continue", nil)
+	mockRunner.AddResponse("", nil) // send-keys "1"
+
+	rt := runtime.NewCodexRuntime(false)
+	es := &mockEventStore{}
+	wd := NewWatchdog(WatchdogConfig{StuckThresholdS: 120}, es)
+
+	result := wd.Check(mockRunner, "test-session", rt)
+	if result.Action != "permission_bypass" {
+		t.Fatalf("expected permission_bypass, got %s", result.Action)
+	}
+
+	if got := mockRunner.Commands[1].Args[3]; got != "1" {
+		t.Fatalf("expected watchdog to answer Codex trust prompt with 1, got %q", got)
 	}
 }
 

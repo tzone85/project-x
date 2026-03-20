@@ -106,7 +106,7 @@ func runResume(ctx context.Context, reqID string, godmode bool) error {
 	runner := git.ExecRunner{}
 	reg := runtime.NewRegistry()
 	reg.Register("claude-code", runtime.NewClaudeCodeRuntime(godmode))
-	reg.Register("codex", runtime.NewCodexRuntime())
+	reg.Register("codex", runtime.NewCodexRuntime(godmode))
 	reg.Register("gemini", runtime.NewGeminiRuntime())
 
 	router := runtime.NewRouter(reg, app.config)

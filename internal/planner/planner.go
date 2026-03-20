@@ -69,7 +69,16 @@ func (p *Planner) Plan(ctx context.Context, requirement, techStackInfo string) (
 
 		stories, err := parseStories(resp.Content)
 		if err != nil {
-			return nil, fmt.Errorf("parse stories (round %d): %w", round+1, err)
+			lastIssues = []string{buildParseRetryIssue(resp.Content)}
+			if round == maxPlanningRounds-1 {
+				return nil, fmt.Errorf(
+					"parse stories (round %d): %w; response excerpt: %q",
+					round+1,
+					err,
+					summarizeModelOutput(resp.Content),
+				)
+			}
+			continue
 		}
 
 		// If no validation config is set, skip validation and return immediately.
@@ -87,6 +96,22 @@ func (p *Planner) Plan(ctx context.Context, requirement, techStackInfo string) (
 
 	return nil, fmt.Errorf("planner failed after %d rounds; unresolved issues: %s",
 		maxPlanningRounds, strings.Join(lastIssues, "; "))
+}
+
+func buildParseRetryIssue(content string) string {
+	return fmt.Sprintf(
+		"Your previous response was not valid JSON. Return ONLY a valid JSON object that matches the required schema. Previous response excerpt: %q",
+		summarizeModelOutput(content),
+	)
+}
+
+func summarizeModelOutput(content string) string {
+	summary := strings.Join(strings.Fields(strings.TrimSpace(content)), " ")
+	const maxSummaryLen = 200
+	if len(summary) > maxSummaryLen {
+		return summary[:maxSummaryLen] + "..."
+	}
+	return summary
 }
 
 // hasValidationConfig returns true if the config has any validation

@@ -10,7 +10,7 @@ import (
 func TestRouter_CostOptimized_PrefersConfigured(t *testing.T) {
 	reg := NewRegistry()
 	reg.Register("claude-code", NewClaudeCodeRuntime(false))
-	reg.Register("codex", NewCodexRuntime())
+	reg.Register("codex", NewCodexRuntime(false))
 
 	cfg := config.Config{
 		Routing: config.RoutingConfig{
@@ -96,7 +96,7 @@ func TestRouter_ErrorWhenNoRuntimes(t *testing.T) {
 func TestRouter_NoPreferenceForRole_UsesDefault(t *testing.T) {
 	reg := NewRegistry()
 	reg.Register("claude-code", NewClaudeCodeRuntime(false))
-	reg.Register("codex", NewCodexRuntime())
+	reg.Register("codex", NewCodexRuntime(false))
 
 	cfg := config.Config{
 		Routing: config.RoutingConfig{
