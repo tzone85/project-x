@@ -1,13 +1,174 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PX Dashboard</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PX Dashboard</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
 </head>
-<body>
-  <div id="app">PX Dashboard (loading...)</div>
-  <script src="app.js"></script>
+<body class="bg-gray-900 text-gray-100 min-h-screen" x-data="dashboard()" x-init="init()">
+    <!-- Header -->
+    <header class="bg-gray-800 border-b border-gray-700 px-6 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <h1 class="text-xl font-bold">PX Dashboard</h1>
+            <span class="text-sm text-gray-400" x-text="'v' + version"></span>
+        </div>
+        <div class="flex items-center gap-4 text-sm">
+            <span class="text-gray-400" x-text="lastRefresh ? 'Updated: ' + lastRefresh : 'Loading...'"></span>
+            <span :class="connected ? 'text-green-400' : 'text-red-400'" x-text="connected ? 'Live' : 'Disconnected'"></span>
+        </div>
+    </header>
+
+    <!-- Tab Navigation -->
+    <nav class="bg-gray-800 px-6 flex gap-1 border-b border-gray-700">
+        <template x-for="(tab, i) in tabs" :key="i">
+            <button @click="activeTab = i"
+                :class="activeTab === i ? 'bg-gray-700 text-white border-b-2 border-blue-400' : 'text-gray-400 hover:text-white'"
+                class="px-4 py-2 text-sm font-medium transition-colors"
+                x-text="tab"></button>
+        </template>
+    </nav>
+
+    <!-- Panel Content -->
+    <main class="p-6">
+        <!-- Pipeline Panel -->
+        <div x-show="activeTab === 0">
+            <!-- Paused banners -->
+            <template x-for="req in requirements.filter(r => r.Status === 'paused')" :key="req.ID">
+                <div class="bg-red-900/30 border border-red-700 rounded px-4 py-2 mb-4 text-red-300">
+                    PAUSED: <span x-text="req.ID.substring(0, 8)"></span> — <span x-text="req.Title"></span>
+                </div>
+            </template>
+
+            <!-- Kanban columns -->
+            <div class="grid grid-cols-6 gap-3">
+                <template x-for="status in ['planned','assigned','in_progress','review','qa','merged']" :key="status">
+                    <div class="bg-gray-800 rounded-lg p-3 min-h-[200px]">
+                        <h3 class="text-sm font-bold uppercase mb-2 flex justify-between"
+                            :class="statusColor(status)">
+                            <span x-text="statusLabel(status)"></span>
+                            <span class="text-gray-500" x-text="storiesByStatus(status).length"></span>
+                        </h3>
+                        <div class="space-y-2">
+                            <template x-for="story in storiesByStatus(status)" :key="story.ID">
+                                <div class="bg-gray-700 rounded p-2 text-xs">
+                                    <div class="flex justify-between items-center mb-1">
+                                        <span class="font-mono text-gray-400" x-text="story.ID.substring(0, 10)"></span>
+                                        <span class="bg-gray-600 px-1 rounded" x-text="'C' + story.Complexity"></span>
+                                    </div>
+                                    <div class="text-gray-200 truncate" x-text="story.Title"></div>
+                                    <div class="text-gray-500 mt-1" x-show="story.AgentID" x-text="'Agent: ' + (story.AgentID || '').substring(0, 8)"></div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- Agents Panel -->
+        <div x-show="activeTab === 1">
+            <!-- Summary -->
+            <div class="flex gap-4 mb-4 text-sm">
+                <span>Total: <span class="font-bold" x-text="agents.length"></span></span>
+                <span class="text-green-400">Active: <span x-text="agents.filter(a => a.Status === 'active').length"></span></span>
+                <span class="text-gray-400">Idle: <span x-text="agents.filter(a => a.Status === 'idle').length"></span></span>
+                <span class="text-red-400">Stuck: <span x-text="agents.filter(a => a.Status === 'stuck').length"></span></span>
+            </div>
+            <!-- Table -->
+            <table class="w-full text-sm">
+                <thead class="text-gray-400 border-b border-gray-700">
+                    <tr>
+                        <th class="text-left py-2 px-3">ID</th>
+                        <th class="text-left py-2 px-3">Role</th>
+                        <th class="text-left py-2 px-3">Model</th>
+                        <th class="text-left py-2 px-3">Status</th>
+                        <th class="text-left py-2 px-3">Story</th>
+                        <th class="text-left py-2 px-3">Session</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template x-for="agent in agents" :key="agent.ID">
+                        <tr class="border-b border-gray-800 hover:bg-gray-800">
+                            <td class="py-2 px-3 font-mono text-xs" x-text="agent.ID.substring(0, 12)"></td>
+                            <td class="py-2 px-3" x-text="agent.Type"></td>
+                            <td class="py-2 px-3 text-gray-400" x-text="agent.Model"></td>
+                            <td class="py-2 px-3" :class="agentStatusColor(agent.Status)" x-text="agent.Status"></td>
+                            <td class="py-2 px-3 font-mono text-xs" x-text="agent.CurrentStoryID ? agent.CurrentStoryID.substring(0, 10) : '-'"></td>
+                            <td class="py-2 px-3 text-gray-500 text-xs" x-text="agent.SessionName || '-'"></td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+            <div x-show="agents.length === 0" class="text-gray-500 py-8 text-center">No agents found.</div>
+        </div>
+
+        <!-- Activity Panel -->
+        <div x-show="activeTab === 2">
+            <div class="space-y-1 font-mono text-xs">
+                <template x-for="evt in events" :key="evt.ID">
+                    <div class="flex gap-3 py-1 border-b border-gray-800">
+                        <span class="text-gray-500 shrink-0" x-text="evt.Timestamp.substring(11, 19)"></span>
+                        <span class="text-blue-400 shrink-0 w-40" x-text="evt.Type"></span>
+                        <span class="text-gray-400" x-text="evt.AgentID ? 'agent=' + evt.AgentID.substring(0, 8) : ''"></span>
+                        <span class="text-gray-400" x-text="evt.StoryID ? 'story=' + evt.StoryID.substring(0, 10) : ''"></span>
+                    </div>
+                </template>
+            </div>
+            <div x-show="events.length === 0" class="text-gray-500 py-8 text-center">No events found.</div>
+        </div>
+
+        <!-- Escalations Panel -->
+        <div x-show="activeTab === 3">
+            <template x-for="esc in escalations" :key="esc.ID">
+                <div class="bg-gray-800 rounded p-3 mb-2">
+                    <div class="flex justify-between">
+                        <span class="font-mono text-xs text-gray-400" x-text="esc.StoryID"></span>
+                        <span :class="esc.Status === 'pending' ? 'text-yellow-400' : 'text-gray-400'" x-text="esc.Status"></span>
+                    </div>
+                    <div class="mt-1" x-text="esc.Reason"></div>
+                    <div class="text-gray-500 text-xs mt-1" x-text="'From: ' + esc.FromAgent"></div>
+                </div>
+            </template>
+            <div x-show="escalations.length === 0" class="text-gray-500 py-8 text-center">No escalations.</div>
+        </div>
+
+        <!-- Cost Panel -->
+        <div x-show="activeTab === 4">
+            <div class="bg-gray-800 rounded p-4 mb-4">
+                <h3 class="text-sm font-bold mb-2">Daily Spend</h3>
+                <div class="flex items-center gap-3">
+                    <div class="flex-1 bg-gray-700 rounded-full h-4 overflow-hidden">
+                        <div class="h-full rounded-full transition-all"
+                            :class="costPct > 80 ? 'bg-red-500' : costPct > 60 ? 'bg-yellow-500' : 'bg-green-500'"
+                            :style="'width: ' + Math.min(costPct, 100) + '%'"></div>
+                    </div>
+                    <span class="text-sm" x-text="'$' + dailyCost.toFixed(2) + ' / $' + dailyLimit.toFixed(2)"></span>
+                </div>
+            </div>
+            <div x-show="!costData" class="text-gray-500 py-8 text-center">No cost data available.</div>
+        </div>
+
+        <!-- Logs Panel -->
+        <div x-show="activeTab === 5">
+            <div class="font-mono text-xs space-y-0.5 bg-gray-800 rounded p-3 max-h-[600px] overflow-y-auto">
+                <template x-for="(line, i) in logLines" :key="i">
+                    <div class="text-gray-400" x-text="line"></div>
+                </template>
+            </div>
+            <div x-show="logLines.length === 0" class="text-gray-500 py-8 text-center">No log entries.</div>
+        </div>
+    </main>
+
+    <!-- Status Bar -->
+    <footer class="fixed bottom-0 left-0 right-0 bg-gray-800 border-t border-gray-700 px-6 py-2 flex justify-between text-xs text-gray-400">
+        <span>PX Dashboard</span>
+        <span x-text="waveStatus"></span>
+        <span x-text="'$' + dailyCost.toFixed(2) + ' / $' + dailyLimit.toFixed(2)"></span>
+    </footer>
+
+    <script src="app.js"></script>
 </body>
 </html>
