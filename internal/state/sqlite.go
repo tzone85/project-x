@@ -48,6 +48,11 @@ func (s *SQLiteStore) Close() error {
 	return s.db.Close()
 }
 
+// DB returns the underlying *sql.DB for use by packages that share the same database.
+func (s *SQLiteStore) DB() *sql.DB {
+	return s.db
+}
+
 // Project dispatches an event to the appropriate projection handler.
 // Unknown event types are silently ignored for forward compatibility.
 func (s *SQLiteStore) Project(evt Event) error {

@@ -73,6 +73,7 @@ func NewRootCmd() *cobra.Command {
 	cmd.AddCommand(newMigrateCmd())
 	cmd.AddCommand(newEventsCmd())
 	cmd.AddCommand(newStatusCmd())
+	cmd.AddCommand(newCostCmd())
 	return cmd
 }
 
