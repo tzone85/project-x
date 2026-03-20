@@ -103,10 +103,11 @@ func initApp() error {
 	if err != nil {
 		return fmt.Errorf("load config: %w", err)
 	}
+	// Expand ~ in state directory so all downstream consumers get the real path.
+	cfg.Workspace.StateDir = config.ExpandHome(cfg.Workspace.StateDir)
 	app.config = cfg
 
-	// Expand ~ in state directory.
-	stateDir := config.ExpandHome(cfg.Workspace.StateDir)
+	stateDir := cfg.Workspace.StateDir
 	app.stateDir = stateDir
 
 	// Set up logging.
