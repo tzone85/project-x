@@ -153,6 +153,35 @@ type StoryAssignedPayload struct {
 	Wave    int    `json:"wave"`
 }
 
+// StoryPRCreatedPayload carries data for a story PR creation event.
+type StoryPRCreatedPayload struct {
+	PRUrl    string `json:"pr_url"`
+	PRNumber int    `json:"pr_number"`
+}
+
+// AgentSpawnedPayload carries data for an agent spawned event.
+type AgentSpawnedPayload struct {
+	ID          string `json:"id"`
+	Type        string `json:"type"`
+	Model       string `json:"model"`
+	Runtime     string `json:"runtime"`
+	SessionName string `json:"session_name"`
+	StoryID     string `json:"story_id"`
+}
+
+// EscalationCreatedPayload carries data for an escalation creation event.
+type EscalationCreatedPayload struct {
+	ID        string `json:"id"`
+	StoryID   string `json:"story_id"`
+	FromAgent string `json:"from_agent"`
+	Reason    string `json:"reason"`
+}
+
+// ReqStatusPayload carries the req_id for requirement status update events.
+type ReqStatusPayload struct {
+	ReqID string `json:"req_id"`
+}
+
 // BudgetWarningPayload carries data for a budget warning event.
 type BudgetWarningPayload struct {
 	ReqID      string  `json:"req_id"`
