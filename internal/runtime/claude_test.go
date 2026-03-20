@@ -83,6 +83,9 @@ func TestClaudeCodeRuntime_Spawn(t *testing.T) {
 	if !strings.Contains(lastArg, "--model") {
 		t.Errorf("expected command to contain '--model' flag, got %q", lastArg)
 	}
+	if !strings.Contains(lastArg, "printf '$") {
+		t.Errorf("expected completion marker in command, got %q", lastArg)
+	}
 }
 
 func TestClaudeCodeRuntime_SpawnWithGodmode(t *testing.T) {
@@ -106,6 +109,9 @@ func TestClaudeCodeRuntime_SpawnWithGodmode(t *testing.T) {
 	lastArg := newCmd.Args[len(newCmd.Args)-1]
 	if !strings.Contains(lastArg, "--dangerously-skip-permissions") {
 		t.Errorf("expected godmode flag, got %q", lastArg)
+	}
+	if !strings.Contains(lastArg, "printf '$") {
+		t.Errorf("expected completion marker in command, got %q", lastArg)
 	}
 }
 

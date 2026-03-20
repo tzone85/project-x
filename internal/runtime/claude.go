@@ -117,7 +117,13 @@ func (c *ClaudeCodeRuntime) buildCommand(cfg SessionConfig) string {
 
 	// Use a heredoc to pipe the goal into stdin.
 	// The PX_EOF delimiter is unlikely to appear in prompts.
-	return "cat <<'PX_EOF' | " + cmd + "\n" + cfg.Goal + "\nPX_EOF"
+	return "cat <<'PX_EOF' | " + cmd + "\n" + cfg.Goal + "\nPX_EOF\n" +
+		"status=$?\n" +
+		"if [ $status -eq 0 ]; then\n" +
+		"  printf '$\\n'\n" +
+		"  sleep 30\n" +
+		"fi\n" +
+		"exit $status"
 }
 
 // classifyOutput matches output against known patterns.
