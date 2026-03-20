@@ -26,6 +26,7 @@ jobs:
         uses: golangci/golangci-lint-action@v7
         with:
           version: v2.1
+          install-mode: goinstall
 
       - name: Test
         run: go test ./... -race -coverprofile=coverage.out
