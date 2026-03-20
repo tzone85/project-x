@@ -11,11 +11,26 @@ Hand off a requirement. Walk away. Come back to merged PRs.
   <img src="demo.gif" alt="px demo" width="800" />
 </p>
 
-> **Generate the demo GIF:** Install [VHS](https://github.com/charmbracelet/vhs) (`brew install vhs`), then run:
-> ```bash
-> vhs demo.tape
-> ```
-> This produces `demo.gif` from the scripted terminal session in [`demo.tape`](demo.tape).
+## Demo
+
+The README preview is generated from the checked-in [`demo.tape`](demo.tape) VHS script, so the repository includes both the rendered demo (`demo.gif`) and the source that produced it.
+
+The tape walks through a representative `px` flow:
+
+- checking the installed version
+- initializing local state with `px migrate`
+- planning a requirement from stdin with `px plan -`
+- inspecting progress and spend with `px status` and `px cost`
+- showing the dashboard entry points for TUI and web mode
+
+To regenerate the animation, install [VHS](https://github.com/charmbracelet/vhs) and run:
+
+```bash
+brew install vhs
+vhs demo.tape
+```
+
+If the scripted flow changes, update [`demo.tape`](demo.tape) first and then re-render `demo.gif` so the README stays accurate.
 
 ---
 
