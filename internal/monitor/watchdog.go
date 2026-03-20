@@ -21,13 +21,16 @@ const fingerprintLines = 30
 // Classification patterns for detecting agent states from pane output.
 var (
 	watchdogPermissionRe = regexp.MustCompile(
-		`(?i)(Allow\s+.*\?\s*\(y/n\)|Yes\s*/\s*No|approve\s+this|Do you want to allow)`,
+		`(?i)(Allow\s+.*\?\s*\(y/n\)|Yes\s*/\s*No|approve\s+this|Do you want to allow|Do you trust the contents of this directory|Press enter to continue)`,
 	)
 	watchdogPlanModeRe = regexp.MustCompile(
 		`(?i)(plan\s*mode|Plan:\s+)`,
 	)
 	watchdogIdleRe = regexp.MustCompile(
 		`(?m)^\$\s*$`,
+	)
+	watchdogCodexTrustRe = regexp.MustCompile(
+		`(?i)(Do you trust the contents of this directory|Press enter to continue)`,
 	)
 )
 
@@ -93,7 +96,11 @@ func (w *Watchdog) Check(runner git.CommandRunner, sessionName string, rt runtim
 
 	switch status {
 	case runtime.StatusPermissionPrompt:
-		_ = rt.SendInput(runner, sessionName, "Y")
+		input := "Y"
+		if watchdogCodexTrustRe.MatchString(output) {
+			input = "1"
+		}
+		_ = rt.SendInput(runner, sessionName, input)
 		result.Action = "permission_bypass"
 
 	case runtime.StatusPlanMode:

@@ -68,6 +68,22 @@ func TestPlanner_HandlesInvalidJSON(t *testing.T) {
 	}
 }
 
+func TestPlanner_RetriesAfterInvalidJSON(t *testing.T) {
+	client := llm.NewReplayClient(
+		llm.CompletionResponse{Content: "I think these stories look good.", Model: "test"},
+		llm.CompletionResponse{Content: mockStoryResponse(), Model: "test"},
+	)
+	p := NewPlanner(client, PlannerConfig{})
+
+	stories, err := p.Plan(context.Background(), "Build something", "")
+	if err != nil {
+		t.Fatalf("plan after parse retry: %v", err)
+	}
+	if len(stories) != 2 {
+		t.Fatalf("expected 2 stories after retry, got %d", len(stories))
+	}
+}
+
 func TestPlanner_IncludesTechStackContext(t *testing.T) {
 	client := llm.NewReplayClient(
 		llm.CompletionResponse{Content: mockStoryResponse(), Model: "test"},

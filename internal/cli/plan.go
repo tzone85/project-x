@@ -70,8 +70,7 @@ func runPlan(ctx context.Context, file string) error {
 
 	// Make story IDs globally unique by prefixing with a short req identifier.
 	// The LLM generates generic IDs like "s-1", "s-2" which would collide across requirements.
-	prefix := reqID[:8] // first 8 chars of ULID is enough uniqueness
-	stories = scopeStoryIDs(stories, prefix)
+	stories = scopeStoriesForRequirement(reqID, stories)
 
 	reqEvt := state.NewEvent(state.EventReqSubmitted, "user", "", map[string]any{
 		"id":          reqID,
@@ -207,6 +206,7 @@ func runPlanRefine(ctx context.Context, reqID string) error {
 	if err != nil {
 		return fmt.Errorf("re-planning failed: %w", err)
 	}
+	stories = scopeStoriesForRequirement(reqID, stories)
 
 	if err := app.projStore.ArchiveStoriesByReq(reqID); err != nil {
 		return fmt.Errorf("archive old stories: %w", err)
@@ -331,6 +331,14 @@ func buildDepMap(deps []state.StoryDep) map[string][]string {
 		m[d.StoryID] = append(m[d.StoryID], d.DependsOnID)
 	}
 	return m
+}
+
+func scopeStoriesForRequirement(reqID string, stories []planner.PlannedStory) []planner.PlannedStory {
+	prefix := reqID
+	if len(prefix) > 8 {
+		prefix = prefix[:8]
+	}
+	return scopeStoryIDs(stories, prefix)
 }
 
 // scopeStoryIDs prefixes all story IDs and their dependency references with

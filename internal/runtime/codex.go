@@ -11,7 +11,7 @@ import (
 // Detection patterns for Codex CLI output.
 var (
 	codexPermissionRe = regexp.MustCompile(
-		`(?i)(confirm\s+action|proceed\?\s*\[y/n\]|allow\s+this)`,
+		`(?i)(confirm\s+action|proceed\?\s*\[y/n\]|allow\s+this|do\s+you\s+trust\s+the\s+contents\s+of\s+this\s+directory|press\s+enter\s+to\s+continue)`,
 	)
 	codexIdleRe = regexp.MustCompile(
 		`(?m)^\$\s*$`,
@@ -19,11 +19,13 @@ var (
 )
 
 // CodexRuntime implements the Runtime interface for the OpenAI Codex CLI.
-type CodexRuntime struct{}
+type CodexRuntime struct {
+	godmode bool
+}
 
 // NewCodexRuntime creates a CodexRuntime.
-func NewCodexRuntime() *CodexRuntime {
-	return &CodexRuntime{}
+func NewCodexRuntime(godmode bool) *CodexRuntime {
+	return &CodexRuntime{godmode: godmode}
 }
 
 // Name returns "codex".
@@ -76,7 +78,7 @@ func (c *CodexRuntime) Capabilities() RuntimeCapabilities {
 			"o3",
 			"o4-mini",
 		},
-		SupportsGodmode:    false,
+		SupportsGodmode:    c.godmode,
 		SupportsLogFile:    false,
 		SupportsJsonOutput: false,
 		MaxPromptLength:    0,
@@ -86,15 +88,30 @@ func (c *CodexRuntime) Capabilities() RuntimeCapabilities {
 // buildCommand constructs the codex CLI invocation string.
 func (c *CodexRuntime) buildCommand(cfg SessionConfig) string {
 	var parts []string
-	parts = append(parts, "codex")
+	parts = append(parts, "codex", "exec", "--color", "never", "--sandbox", "workspace-write")
 
-	if cfg.Model != "" {
-		parts = append(parts, "--model", cfg.Model)
+	if c.godmode {
+		parts = append(parts, "--dangerously-bypass-approvals-and-sandbox")
+	} else {
+		parts = append(parts, "--full-auto")
 	}
 
-	parts = append(parts, shellQuote(cfg.Goal))
+	if cfg.Model != "" {
+		parts = append(parts, "--model", shellQuote(cfg.Model))
+	}
 
-	return strings.Join(parts, " ")
+	parts = append(parts, "-")
+	cmd := strings.Join(parts, " ")
+
+	// Keep the session alive briefly with a bare "$" marker so the poller can
+	// classify the agent as done and advance the pipeline before tmux exits.
+	return "cat <<'PX_EOF' | " + cmd + "\n" + cfg.Goal + "\nPX_EOF\n" +
+		"status=$?\n" +
+		"if [ $status -eq 0 ]; then\n" +
+		"  printf '$\\n'\n" +
+		"  sleep 30\n" +
+		"fi\n" +
+		"exit $status"
 }
 
 // classifyOutput matches Codex output against known patterns.

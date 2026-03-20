@@ -40,7 +40,7 @@ func TestRuntimeFallbackManager_SwitchesToConfiguredRuntime(t *testing.T) {
 	runner.AddResponse("", nil)                      // tmux new-session
 
 	reg := runtime.NewRegistry()
-	reg.Register("codex", runtime.NewCodexRuntime())
+	reg.Register("codex", runtime.NewCodexRuntime(false))
 
 	es := &mockEventStore{}
 	ps := &mockProjector{}
@@ -116,7 +116,7 @@ func TestRuntimeFallbackManager_SwitchesToConfiguredRuntime(t *testing.T) {
 
 func TestRuntimeFallbackManager_DeclinePausesRequirement(t *testing.T) {
 	reg := runtime.NewRegistry()
-	reg.Register("codex", runtime.NewCodexRuntime())
+	reg.Register("codex", runtime.NewCodexRuntime(false))
 
 	es := &mockEventStore{}
 	ps := &mockProjector{}
