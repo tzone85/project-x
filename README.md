@@ -12,7 +12,7 @@ Hand off a requirement. Walk away. Come back to merged PRs.
 
 ## Demo
 
-The README embeds the checked-in `demo.gif`, generated from [`demo.tape`](demo.tape). The current tape shows the Claude-first planning fallback flow: Claude CLI exhaustion, approval to try the OpenAI API, approval to continue on local Codex when API quota is exhausted, and a successful `px plan --review`.
+The README embeds the checked-in `demo.gif`, generated from [`demo.tape`](demo.tape). The current tape shows the Claude-first planning fallback flow, reviews the generated plan, resumes execution on Codex-backed implementation agents, and opens the TUI dashboard while work is in flight. The render uses the committed [`demo.config.yaml`](demo.config.yaml) to keep planning Claude-first while routing execution roles to Codex for a stable live demo.
 
 To regenerate the animation, install [VHS](https://github.com/charmbracelet/vhs) and run:
 
