@@ -1,0 +1,30 @@
+name: Runtime Plugin Proposal
+description: Propose a new runtime plugin for Project X
+labels: [runtime-plugin]
+body:
+  - type: input
+    id: runtime-name
+    attributes:
+      label: Runtime Name
+      placeholder: e.g., CursorRuntime
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What CLI tool does this runtime wrap?
+    validations:
+      required: true
+  - type: textarea
+    id: capabilities
+    attributes:
+      label: Capabilities
+      description: What models and features does it support?
+    validations:
+      required: true
+  - type: textarea
+    id: detection
+    attributes:
+      label: Detection
+      description: How should px detect if this runtime is available?
