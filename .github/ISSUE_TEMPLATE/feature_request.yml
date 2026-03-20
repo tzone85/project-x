@@ -1,0 +1,28 @@
+name: Feature Request
+description: Suggest a new feature or enhancement for px
+labels: ["enhancement"]
+body:
+  - type: textarea
+    attributes:
+      label: Problem statement
+      description: What problem does this feature solve?
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Proposed solution
+      description: Describe the feature you would like to see.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Alternatives considered
+      description: What other approaches did you consider?
+  - type: textarea
+    attributes:
+      label: Additional context
+      description: Any other context, mockups, or references.
+  - type: input
+    attributes:
+      label: px version
+      description: Output of `px version`

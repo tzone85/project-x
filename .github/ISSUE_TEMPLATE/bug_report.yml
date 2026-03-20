@@ -1,0 +1,28 @@
+name: Bug Report
+description: Report a bug in px
+labels: ["bug"]
+body:
+  - type: textarea
+    attributes:
+      label: Description
+      description: What happened?
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Steps to reproduce
+      description: How can we reproduce this?
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen?
+  - type: input
+    attributes:
+      label: px version
+      description: Output of `px version`
+  - type: input
+    attributes:
+      label: OS
+      description: Operating system and version

@@ -1,0 +1,38 @@
+name: Runtime Plugin Request
+description: Request support for a new AI runtime (CLI tool) in px
+labels: ["runtime", "plugin"]
+body:
+  - type: input
+    attributes:
+      label: Runtime name
+      description: Name of the AI runtime or CLI tool (e.g. "gemini", "codex", "aider")
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Runtime command
+      description: The CLI command used to invoke the runtime (e.g. `gemini`)
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Runtime description
+      description: Brief description of the runtime and what models it supports.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Idle detection pattern
+      description: Regex or string pattern that indicates the runtime is idle and waiting for input.
+  - type: textarea
+    attributes:
+      label: Permission prompt pattern
+      description: Regex or string pattern that indicates the runtime is waiting for user permission.
+  - type: textarea
+    attributes:
+      label: Plan mode pattern
+      description: Regex or string pattern that indicates the runtime is in plan/review mode.
+  - type: textarea
+    attributes:
+      label: Additional notes
+      description: Any other relevant information about this runtime.

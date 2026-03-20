@@ -77,6 +77,7 @@ func NewRootCmd() *cobra.Command {
 	cmd.AddCommand(newPlanCmd())
 	cmd.AddCommand(newResumeCmd())
 	cmd.AddCommand(newDashboardCmd())
+	cmd.AddCommand(newAgentsCmd(), newConfigCmd(), newGCCmd(), newArchiveCmd())
 	return cmd
 }
 
