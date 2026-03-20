@@ -13,13 +13,18 @@ const (
 )
 
 // buildLLMClient returns an LLM client wrapped with retry logic.
-// If ANTHROPIC_API_KEY is set in the environment, an AnthropicClient is used.
-// Otherwise, a ClaudeCLIClient is used (routes through the user's Claude subscription).
+// Claude CLI is ALWAYS the primary client (uses subscription, no per-token cost).
+// Anthropic API is only used as a fallback if PX_USE_API=true is explicitly set.
+// This prevents accidental API spend — the #1 pain point from VXD.
 func buildLLMClient() llm.Client {
 	var base llm.Client
 
-	if apiKey := os.Getenv("ANTHROPIC_API_KEY"); apiKey != "" {
-		base = llm.NewAnthropicClient(apiKey)
+	if os.Getenv("PX_USE_API") == "true" {
+		if apiKey := os.Getenv("ANTHROPIC_API_KEY"); apiKey != "" {
+			base = llm.NewAnthropicClient(apiKey)
+		} else {
+			base = llm.NewClaudeCLIClient()
+		}
 	} else {
 		base = llm.NewClaudeCLIClient()
 	}
