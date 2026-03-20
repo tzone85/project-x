@@ -48,10 +48,19 @@ type ModelsConfig struct {
 
 // RoutingConfig controls complexity-based task routing.
 type RoutingConfig struct {
-	JuniorMaxComplexity            int `yaml:"junior_max_complexity"`
-	IntermediateMaxComplexity      int `yaml:"intermediate_max_complexity"`
-	MaxRetriesBeforeEscalation     int `yaml:"max_retries_before_escalation"`
-	MaxQAFailuresBeforeEscalation  int `yaml:"max_qa_failures_before_escalation"`
+	JuniorMaxComplexity           int                 `yaml:"junior_max_complexity"`
+	IntermediateMaxComplexity     int                 `yaml:"intermediate_max_complexity"`
+	MaxRetriesBeforeEscalation    int                 `yaml:"max_retries_before_escalation"`
+	MaxQAFailuresBeforeEscalation int                 `yaml:"max_qa_failures_before_escalation"`
+	Strategy                      string              `yaml:"strategy"`    // cost_optimized | performance
+	Preferences                   []RoutingPreference `yaml:"preferences"`
+}
+
+// RoutingPreference maps an agent role to its preferred and fallback runtimes.
+type RoutingPreference struct {
+	Role     string `yaml:"role"`
+	Prefer   string `yaml:"prefer"`
+	Fallback string `yaml:"fallback"`
 }
 
 // MonitorConfig controls the supervisor monitor loop.
