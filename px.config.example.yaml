@@ -1,0 +1,180 @@
+# Project X Configuration
+# Copy this file to px.yaml or px.config.yaml and adjust as needed.
+
+# Schema version — always "1" for now.
+version: "1"
+
+# ---------------------------------------------------------------------------
+# Workspace: general project settings
+# ---------------------------------------------------------------------------
+workspace:
+  # Directory for state files, logs, and database
+  state_dir: "~/.px"
+  # Storage backend: "sqlite" (default) or "dolt" (versioned)
+  backend: sqlite
+  # Log verbosity: debug | info | warn | error
+  log_level: info
+  # How many days to keep log files
+  log_retention_days: 30
+
+# ---------------------------------------------------------------------------
+# Models: LLM assignments per agent role
+# ---------------------------------------------------------------------------
+models:
+  tech_lead:
+    provider: anthropic
+    model: claude-sonnet-4-20250514
+    max_tokens: 16384
+  senior:
+    provider: anthropic
+    model: claude-sonnet-4-20250514
+    max_tokens: 16384
+  intermediate:
+    provider: anthropic
+    model: claude-sonnet-4-20250514
+    max_tokens: 16384
+  junior:
+    provider: anthropic
+    model: claude-haiku-4-20250414
+    max_tokens: 8192
+  qa:
+    provider: anthropic
+    model: claude-sonnet-4-20250514
+    max_tokens: 16384
+  supervisor:
+    provider: anthropic
+    model: claude-sonnet-4-20250514
+    max_tokens: 16384
+
+# ---------------------------------------------------------------------------
+# Routing: complexity-based task assignment
+# ---------------------------------------------------------------------------
+routing:
+  # Stories with complexity <= this go to junior agents (1-13)
+  junior_max_complexity: 3
+  # Stories with complexity <= this go to intermediate agents (must be >= junior, <= 13)
+  intermediate_max_complexity: 5
+  # How many retries before escalating to a higher-tier agent
+  max_retries_before_escalation: 3
+  # How many QA failures before escalating
+  max_qa_failures_before_escalation: 2
+
+# ---------------------------------------------------------------------------
+# Monitor: supervisor polling and health checks
+# ---------------------------------------------------------------------------
+monitor:
+  # How often the supervisor polls session status (milliseconds)
+  poll_interval_ms: 10000
+  # Seconds without progress before a session is considered stuck
+  stuck_threshold_s: 120
+  # Token count at which to rotate context for freshness
+  context_freshness_tokens: 150000
+
+# ---------------------------------------------------------------------------
+# Cleanup: post-merge resource management
+# ---------------------------------------------------------------------------
+cleanup:
+  # When to prune git worktrees: "immediate" or "deferred"
+  worktree_prune: immediate
+  # Days to keep merged branches before deletion
+  branch_retention_days: 7
+  # Path or strategy for archiving old logs (empty = no archive)
+  log_archive: ""
+
+# ---------------------------------------------------------------------------
+# Merge: PR and merge behaviour
+# ---------------------------------------------------------------------------
+merge:
+  # Automatically merge PRs that pass QA
+  auto_merge: true
+  # Default base branch for PRs
+  base_branch: main
+  # Path to a PR description template (empty = built-in template)
+  pr_template: ""
+
+# ---------------------------------------------------------------------------
+# Planning: requirement decomposition settings
+# ---------------------------------------------------------------------------
+planning:
+  # Glob patterns for files that must be edited sequentially (not in parallel)
+  sequential_file_patterns: []
+  # Maximum allowed complexity score for a single story (1-13)
+  max_story_complexity: 8
+  # Maximum number of stories per requirement
+  max_stories_per_requirement: 15
+  # Enforce that each file is owned by exactly one story in a plan
+  enforce_file_ownership: true
+  # Skip safety checks and human approval gates (use with caution)
+  godmode: false
+
+# ---------------------------------------------------------------------------
+# Budget: cost protection for LLM usage
+# ---------------------------------------------------------------------------
+budget:
+  # Maximum USD spend per story
+  max_cost_per_story_usd: 2.0
+  # Maximum USD spend per requirement (across all its stories)
+  max_cost_per_requirement_usd: 20.0
+  # Maximum USD spend per calendar day
+  max_cost_per_day_usd: 50.0
+  # Percentage of budget at which to emit a warning (0-100)
+  warning_threshold_pct: 80
+  # Hard-stop execution when budget is exceeded
+  hard_stop: true
+
+# ---------------------------------------------------------------------------
+# Sessions: tmux session health management
+# ---------------------------------------------------------------------------
+sessions:
+  # Seconds without output before a session is considered stale
+  stale_threshold_s: 180
+  # Action when a session dies: redispatch | escalate | pause
+  on_dead: redispatch
+  # Action when a session is stale: restart | kill_redispatch | escalate
+  on_stale: restart
+  # Maximum recovery attempts before giving up
+  max_recovery_attempts: 2
+
+# ---------------------------------------------------------------------------
+# Pipeline: per-stage retry policies
+# ---------------------------------------------------------------------------
+pipeline:
+  stages:
+    implement:
+      max_retries: 3
+      on_exhaust: escalate
+    qa:
+      max_retries: 2
+      on_exhaust: escalate
+    merge:
+      max_retries: 1
+      on_exhaust: pause
+
+# ---------------------------------------------------------------------------
+# Runtimes: AI runtime configurations
+# ---------------------------------------------------------------------------
+runtimes:
+  claude_code:
+    command: claude
+    args: ["--print", "--output-format", "stream-json"]
+    models:
+      - claude-sonnet-4-20250514
+      - claude-haiku-4-20250414
+    detection:
+      idle_pattern: '^\{"type":"result"'
+      permission_pattern: "permission"
+      plan_mode_pattern: "plan_mode"
+
+# ---------------------------------------------------------------------------
+# Pricing: per-model token costs (USD per 1M tokens)
+# ---------------------------------------------------------------------------
+pricing:
+  claude-sonnet-4-20250514:
+    input_per_1m: 3.0
+    output_per_1m: 15.0
+  claude-haiku-4-20250414:
+    input_per_1m: 0.80
+    output_per_1m: 4.0
+  claude-opus-4-20250514:
+    input_per_1m: 15.0
+    output_per_1m: 75.0
