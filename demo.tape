@@ -47,3 +47,7 @@ Sleep 16s
 Type "sh -c '(sleep 6; kill -INT $$) & exec ./px --config ./demo.config.yaml dashboard'"
 Enter
 Sleep 8s
+
+Type "sh -c '(sleep 6; kill -INT $$) & exec ./px --config ./demo.config.yaml dashboard --web'"
+Enter
+Sleep 8s

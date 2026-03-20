@@ -12,7 +12,13 @@ Hand off a requirement. Walk away. Come back to merged PRs.
 
 ## Demo
 
-The README embeds the checked-in `demo.gif`, generated from [`demo.tape`](demo.tape). The current tape shows the Claude-first planning fallback flow, reviews the generated plan, resumes execution on Codex-backed implementation agents, and opens the TUI dashboard while work is in flight. The render uses the committed [`demo.config.yaml`](demo.config.yaml) to keep planning Claude-first while routing execution roles to Codex for a stable live demo.
+The README embeds the checked-in `demo.gif`, generated from [`demo.tape`](demo.tape). The current tape shows the Claude-first planning fallback flow, reviews the generated plan, resumes execution on Codex-backed implementation agents, opens the TUI dashboard while work is in flight, and then launches `px dashboard --web`. The render uses the committed [`demo.config.yaml`](demo.config.yaml) to keep planning Claude-first while routing execution roles to Codex for a stable live demo.
+
+Because VHS only records the terminal, the browser-based dashboard is shown separately below from a real `px dashboard --web` run against the same isolated demo config.
+
+<p align="center">
+  <img src="web-dashboard.png" alt="px web dashboard" width="1000" />
+</p>
 
 To regenerate the animation, install [VHS](https://github.com/charmbracelet/vhs) and run:
 
