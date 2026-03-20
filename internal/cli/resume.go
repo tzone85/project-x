@@ -134,6 +134,9 @@ func runResume(ctx context.Context, reqID string, godmode bool) error {
 	poller := monitor.NewPoller(
 		monitor.PollerConfig{PollIntervalMs: app.config.Monitor.PollIntervalMs},
 		runner, watchdog, pipelineRunner, app.eventStore, reg, app.projector,
+		monitor.NewRuntimeFallbackManager(
+			runner, reg, app.config.Fallback, app.eventStore, app.projector, modelSwitchApprover,
+		),
 	)
 
 	// 8. Wave loop: dispatch → monitor → repeat until all done
@@ -178,9 +181,12 @@ func runResume(ctx context.Context, reqID string, godmode bool) error {
 				continue
 			}
 			activeAgents = append(activeAgents, monitor.ActiveAgent{
-				Assignment:   r.Assignment,
-				WorktreePath: r.WorktreePath,
-				RuntimeName:  r.RuntimeName,
+				Assignment:     r.Assignment,
+				WorktreePath:   r.WorktreePath,
+				RuntimeName:    r.RuntimeName,
+				Model:          r.Model,
+				Story:          storyMap[r.Assignment.StoryID],
+				TranscriptPath: r.TranscriptPath,
 			})
 		}
 

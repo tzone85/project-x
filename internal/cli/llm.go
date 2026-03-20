@@ -15,7 +15,8 @@ const (
 // buildLLMClient returns an LLM client wrapped with retry logic.
 // Claude CLI is ALWAYS the primary client (uses subscription, no per-token cost).
 // Anthropic API is only used as a fallback if PX_USE_API=true is explicitly set.
-// This prevents accidental API spend — the #1 pain point from VXD.
+// This prevents accidental API spend while still allowing approved fallback
+// to OpenAI when Claude is exhausted.
 func buildLLMClient() llm.Client {
 	var base llm.Client
 
@@ -29,5 +30,22 @@ func buildLLMClient() llm.Client {
 		base = llm.NewClaudeCLIClient()
 	}
 
-	return llm.NewRetryClient(base, retryMaxAttempts, retryBaseDelay)
+	primary := llm.NewRetryClient(base, retryMaxAttempts, retryBaseDelay)
+	if !app.config.Fallback.Enabled {
+		return primary
+	}
+
+	var fallbackClient llm.Client
+	if apiKey := os.Getenv("OPENAI_API_KEY"); apiKey != "" {
+		fallbackClient = llm.NewRetryClient(llm.NewOpenAIClient(apiKey), retryMaxAttempts, retryBaseDelay)
+	}
+
+	client := llm.NewFallbackClient(primary, fallbackClient, app.config.Fallback, modelSwitchApprover)
+	if llm.HasCodexCLI() {
+		client.WithCodexCLI(
+			llm.NewRetryClient(llm.NewCodexCLIClient(), retryMaxAttempts, retryBaseDelay),
+		)
+	}
+
+	return client
 }

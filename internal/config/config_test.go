@@ -122,3 +122,61 @@ func TestDefaults_ReturnsNewInstance(t *testing.T) {
 		t.Fatal("Defaults() should return independent copies")
 	}
 }
+
+func TestValidate_RuntimePreferenceProviderMismatch(t *testing.T) {
+	cfg := Defaults()
+	cfg.Models.Junior = ModelConfig{
+		Provider: "anthropic",
+		Model:    "claude-haiku-4-20250414",
+	}
+	cfg.Routing.Preferences = []RoutingPreference{
+		{Role: "junior", Prefer: "codex"},
+	}
+
+	if err := cfg.Validate(); err == nil {
+		t.Fatal("expected error for mismatched runtime/model provider")
+	}
+}
+
+func TestValidate_RuntimePreferenceProviderMatch(t *testing.T) {
+	cfg := Defaults()
+	cfg.Models.Junior = ModelConfig{
+		Provider: "openai",
+		Model:    "gpt-5.4",
+	}
+	cfg.Routing.Preferences = []RoutingPreference{
+		{Role: "junior", Prefer: "codex", Fallback: "claude-code"},
+	}
+
+	if err := cfg.Validate(); err == nil {
+		t.Fatal("expected fallback mismatch to be rejected")
+	}
+
+	cfg.Routing.Preferences = []RoutingPreference{
+		{Role: "junior", Prefer: "codex"},
+	}
+
+	if err := cfg.Validate(); err != nil {
+		t.Fatalf("expected matching provider/runtime config to validate, got %v", err)
+	}
+}
+
+func TestValidate_FallbackRequiresModels(t *testing.T) {
+	cfg := Defaults()
+	cfg.Fallback.Enabled = true
+	cfg.Fallback.LLMModel = ""
+
+	if err := cfg.Validate(); err == nil {
+		t.Fatal("expected error when fallback.llm_model is empty")
+	}
+}
+
+func TestValidate_FallbackRequiresRuntimeModel(t *testing.T) {
+	cfg := Defaults()
+	cfg.Fallback.Enabled = true
+	cfg.Fallback.RuntimeModel = ""
+
+	if err := cfg.Validate(); err == nil {
+		t.Fatal("expected error when fallback.runtime_model is empty")
+	}
+}

@@ -7,20 +7,12 @@ Hand off a requirement. Walk away. Come back to merged PRs.
 `px` decomposes natural-language requirements into atomic stories, dispatches AI coding agents across parallel waves, and drives each story through code review, QA, rebase with LLM-powered conflict resolution, and auto-merge — all while enforcing cost budgets and monitoring session health.
 
 <p align="center">
-  <img src="https://vhs.charm.sh/vhs-4qlNhlDYScFCfkNGRcUxEc.gif" alt="px demo" width="800" />
+  <img src="demo.gif" alt="px demo" width="800" />
 </p>
 
 ## Demo
 
-The README now embeds a published VHS render generated from the checked-in [`demo.tape`](demo.tape) script, while the repository still keeps the source tape and a local `demo.gif` render for iteration.
-
-The tape walks through a representative `px` flow:
-
-- checking the installed version
-- initializing local state with `px migrate`
-- planning a requirement from stdin with `px plan -`
-- inspecting progress and spend with `px status` and `px cost`
-- showing the dashboard entry points for TUI and web mode
+The README embeds the checked-in `demo.gif`, generated from [`demo.tape`](demo.tape). The current tape shows the Claude-first planning fallback flow: Claude CLI exhaustion, approval to try the OpenAI API, approval to continue on local Codex when API quota is exhausted, and a successful `px plan --review`.
 
 To regenerate the animation, install [VHS](https://github.com/charmbracelet/vhs) and run:
 
@@ -82,6 +74,10 @@ The result: you describe what you want, and `px` produces merged PRs.
 | **claude** | Claude Code CLI (primary runtime) | [claude.ai/download](https://claude.ai/download) |
 
 Optional runtimes: `codex` (OpenAI), `gemini` (Google).
+
+> **Model choice for the current codebase:** start with Claude Code first. Planning, review, and rebase-conflict resolution currently go through the Claude CLI client, so Claude Sonnet/Opus is the path that is wired end-to-end today. Use `codex` only after you also switch the routed role's `models.<role>.provider` and `model` to OpenAI-compatible values.
+>
+> If you enable the `fallback` section in `px.yaml`, `px` can stay Claude-first but ask for approval before switching exhausted Claude work over to OpenAI. Planner/review/rebase calls first try the OpenAI API and can then ask again to continue on local `codex` if the API quota is exhausted, while in-progress coding stories can hand off to the configured runtime in the same worktree with generated `PX_HANDOFF.md`, `PX_HANDOFF.json`, and `PX_TRANSCRIPT_SNAPSHOT.log` artifacts.
 
 ### Install
 

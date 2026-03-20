@@ -27,6 +27,12 @@ type PipelineRunner interface {
 	Run(ctx context.Context, sc pipeline.StoryContext) (pipeline.StageResult, error)
 }
 
+// RuntimeFallbacker can replace a Claude agent with an approved fallback
+// runtime when Claude account limits stop progress.
+type RuntimeFallbacker interface {
+	TrySwitch(ctx context.Context, ag ActiveAgent, output string) (ActiveAgent, bool, error)
+}
+
 // Poller polls active agent sessions and drives post-execution pipelines.
 type Poller struct {
 	config     PollerConfig
@@ -36,6 +42,7 @@ type Poller struct {
 	eventStore state.EventStore
 	registry   *runtime.Registry
 	projector  EventSender
+	fallbacker RuntimeFallbacker
 
 	mergeMu sync.Mutex // serializes rebase-push-merge
 }
@@ -49,6 +56,7 @@ func NewPoller(
 	es state.EventStore,
 	reg *runtime.Registry,
 	proj EventSender,
+	fallbacker RuntimeFallbacker,
 ) *Poller {
 	return &Poller{
 		config:     cfg,
@@ -58,6 +66,7 @@ func NewPoller(
 		eventStore: es,
 		registry:   reg,
 		projector:  proj,
+		fallbacker: fallbacker,
 	}
 }
 
@@ -119,6 +128,24 @@ func (p *Poller) pollOnce(ctx context.Context, wg *sync.WaitGroup, active map[st
 		output, err := tmux.ReadOutput(p.runner, sessionName, 5)
 		if err != nil {
 			continue
+		}
+		if p.fallbacker != nil {
+			updated, switched, switchErr := p.fallbacker.TrySwitch(ctx, ag, output)
+			if switchErr != nil {
+				slog.Error("runtime fallback failed", "story", ag.Assignment.StoryID, "error", switchErr)
+				delete(active, sessionName)
+				continue
+			}
+			if switched {
+				if p.watchdog != nil {
+					p.watchdog.ClearFingerprint(sessionName)
+				}
+				if updated.Assignment.SessionName != sessionName {
+					delete(active, sessionName)
+				}
+				active[updated.Assignment.SessionName] = updated
+				continue
+			}
 		}
 		if !isAgentDone(output) {
 			continue

@@ -192,7 +192,7 @@ func classifyCLIError(originalErr error, output []byte) error {
 	text := strings.ToLower(string(output))
 
 	switch {
-	case containsAny(text, "credit balance", "billing", "payment", "quota exceeded"):
+	case containsAny(text, "credit balance", "billing", "payment", "quota exceeded", "out of extra usage", "extra usage"):
 		return &APIError{
 			StatusCode: 400,
 			Message:    strings.TrimSpace(string(output)),

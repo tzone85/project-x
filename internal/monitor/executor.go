@@ -22,17 +22,22 @@ type EventSender interface {
 
 // ActiveAgent represents an agent that has been spawned and is running.
 type ActiveAgent struct {
-	Assignment   Assignment
-	WorktreePath string
-	RuntimeName  string
+	Assignment     Assignment
+	WorktreePath   string
+	RuntimeName    string
+	Model          string
+	Story          planner.PlannedStory
+	TranscriptPath string
 }
 
 // SpawnResult captures the outcome of spawning a single agent.
 type SpawnResult struct {
-	Assignment   Assignment
-	WorktreePath string
-	RuntimeName  string
-	Error        error
+	Assignment     Assignment
+	WorktreePath   string
+	RuntimeName    string
+	Model          string
+	TranscriptPath string
+	Error          error
 }
 
 // Executor creates worktrees, writes agent instructions, and spawns
@@ -144,6 +149,9 @@ func (e *Executor) spawnOne(
 	if modelCfg.Model != "" {
 		sessionCfg.Model = modelCfg.Model
 	}
+	if rt.Capabilities().SupportsLogFile {
+		sessionCfg.LogFile = filepath.Join(worktreePath, transcriptFileName)
+	}
 
 	if err := rt.Spawn(e.runner, sessionCfg); err != nil {
 		return SpawnResult{Assignment: a, Error: fmt.Errorf("spawning runtime for %s: %w", a.StoryID, err)}
@@ -162,9 +170,11 @@ func (e *Executor) spawnOne(
 	e.projector.Send(evt)
 
 	return SpawnResult{
-		Assignment:   a,
-		WorktreePath: worktreePath,
-		RuntimeName:  rt.Name(),
+		Assignment:     a,
+		WorktreePath:   worktreePath,
+		RuntimeName:    rt.Name(),
+		Model:          sessionCfg.Model,
+		TranscriptPath: sessionCfg.LogFile,
 	}
 }
 

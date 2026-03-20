@@ -6,17 +6,18 @@ import "fmt"
 
 // Config is the top-level configuration for Project X.
 type Config struct {
-	Version   string           `yaml:"version"`
-	Workspace WorkspaceConfig  `yaml:"workspace"`
-	Models    ModelsConfig     `yaml:"models"`
-	Routing   RoutingConfig    `yaml:"routing"`
-	Monitor   MonitorConfig    `yaml:"monitor"`
-	Cleanup   CleanupConfig    `yaml:"cleanup"`
-	Merge     MergeConfig      `yaml:"merge"`
-	Planning  PlanningConfig   `yaml:"planning"`
-	Budget    BudgetConfig     `yaml:"budget"`
-	Sessions  SessionsConfig   `yaml:"sessions"`
-	Pipeline  PipelineConfig   `yaml:"pipeline"`
+	Version   string                   `yaml:"version"`
+	Workspace WorkspaceConfig          `yaml:"workspace"`
+	Models    ModelsConfig             `yaml:"models"`
+	Routing   RoutingConfig            `yaml:"routing"`
+	Monitor   MonitorConfig            `yaml:"monitor"`
+	Cleanup   CleanupConfig            `yaml:"cleanup"`
+	Merge     MergeConfig              `yaml:"merge"`
+	Planning  PlanningConfig           `yaml:"planning"`
+	Budget    BudgetConfig             `yaml:"budget"`
+	Sessions  SessionsConfig           `yaml:"sessions"`
+	Pipeline  PipelineConfig           `yaml:"pipeline"`
+	Fallback  FallbackConfig           `yaml:"fallback"`
 	Runtimes  map[string]RuntimeConfig `yaml:"runtimes"`
 	Pricing   map[string]PricingEntry  `yaml:"pricing"`
 }
@@ -52,7 +53,7 @@ type RoutingConfig struct {
 	IntermediateMaxComplexity     int                 `yaml:"intermediate_max_complexity"`
 	MaxRetriesBeforeEscalation    int                 `yaml:"max_retries_before_escalation"`
 	MaxQAFailuresBeforeEscalation int                 `yaml:"max_qa_failures_before_escalation"`
-	Strategy                      string              `yaml:"strategy"`    // cost_optimized | performance
+	Strategy                      string              `yaml:"strategy"` // cost_optimized | performance
 	Preferences                   []RoutingPreference `yaml:"preferences"`
 }
 
@@ -115,6 +116,17 @@ type PipelineConfig struct {
 	Stages map[string]StageConfig `yaml:"stages"`
 }
 
+// FallbackConfig controls graceful switching away from Claude when limits or
+// billing exhaustion prevent progress.
+type FallbackConfig struct {
+	Enabled            bool   `yaml:"enabled"`
+	RequireApproval    bool   `yaml:"require_approval"`
+	LLMModel           string `yaml:"llm_model"`
+	Runtime            string `yaml:"runtime"`
+	RuntimeModel       string `yaml:"runtime_model"`
+	HandoffOutputLines int    `yaml:"handoff_output_lines"`
+}
+
 // StageConfig is the retry policy for a single pipeline stage.
 type StageConfig struct {
 	MaxRetries int    `yaml:"max_retries"`
@@ -161,10 +173,10 @@ func Defaults() Config {
 			HardStop:                 true,
 		},
 		Routing: RoutingConfig{
-			JuniorMaxComplexity:            3,
-			IntermediateMaxComplexity:      5,
-			MaxRetriesBeforeEscalation:     3,
-			MaxQAFailuresBeforeEscalation:  2,
+			JuniorMaxComplexity:           3,
+			IntermediateMaxComplexity:     5,
+			MaxRetriesBeforeEscalation:    3,
+			MaxQAFailuresBeforeEscalation: 2,
 		},
 		Monitor: MonitorConfig{
 			PollIntervalMs:         10000,
@@ -190,6 +202,14 @@ func Defaults() Config {
 			MaxStoriesPerRequirement: 15,
 			EnforceFileOwnership:     true,
 		},
+		Fallback: FallbackConfig{
+			Enabled:            false,
+			RequireApproval:    true,
+			LLMModel:           "gpt-5.4",
+			Runtime:            "codex",
+			RuntimeModel:       "gpt-5.4",
+			HandoffOutputLines: 80,
+		},
 	}
 }
 
@@ -201,6 +221,12 @@ func (c Config) Validate() error {
 	if err := c.validateRouting(); err != nil {
 		return err
 	}
+	if err := c.validateRuntimeModelAlignment(); err != nil {
+		return err
+	}
+	if err := c.validateFallback(); err != nil {
+		return err
+	}
 	if err := c.validateBudget(); err != nil {
 		return err
 	}
@@ -210,6 +236,27 @@ func (c Config) Validate() error {
 	if err := c.validateCleanup(); err != nil {
 		return err
 	}
+	return nil
+}
+
+func (c Config) validateFallback() error {
+	if !c.Fallback.Enabled {
+		return nil
+	}
+
+	if c.Fallback.LLMModel == "" {
+		return fmt.Errorf("fallback.llm_model must be set when fallback.enabled=true")
+	}
+	if c.Fallback.Runtime == "" {
+		return fmt.Errorf("fallback.runtime must be set when fallback.enabled=true")
+	}
+	if c.Fallback.RuntimeModel == "" {
+		return fmt.Errorf("fallback.runtime_model must be set when fallback.enabled=true")
+	}
+	if c.Fallback.HandoffOutputLines < 10 {
+		return fmt.Errorf("fallback.handoff_output_lines must be >= 10, got %d", c.Fallback.HandoffOutputLines)
+	}
+
 	return nil
 }
 
@@ -245,6 +292,82 @@ func (c Config) validateRouting() error {
 	}
 
 	return nil
+}
+
+func (c Config) validateRuntimeModelAlignment() error {
+	for _, pref := range c.Routing.Preferences {
+		modelCfg := c.modelConfigForRole(pref.Role)
+		if modelCfg.Provider == "" {
+			continue
+		}
+
+		if err := validateRuntimeProvider(pref.Role, "prefer", pref.Prefer, modelCfg.Provider); err != nil {
+			return err
+		}
+		if err := validateRuntimeProvider(pref.Role, "fallback", pref.Fallback, modelCfg.Provider); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c Config) modelConfigForRole(role string) ModelConfig {
+	switch role {
+	case "tech_lead":
+		return c.Models.TechLead
+	case "senior":
+		return c.Models.Senior
+	case "intermediate":
+		return c.Models.Intermediate
+	case "junior":
+		return c.Models.Junior
+	case "qa":
+		return c.Models.QA
+	case "supervisor":
+		return c.Models.Supervisor
+	default:
+		return ModelConfig{}
+	}
+}
+
+func validateRuntimeProvider(role, field, runtimeName, provider string) error {
+	if runtimeName == "" {
+		return nil
+	}
+
+	expectedProvider, ok := runtimeProviders[runtimeName]
+	if !ok || provider == "" {
+		return nil
+	}
+
+	if normalizeProvider(provider) != expectedProvider {
+		return fmt.Errorf(
+			"routing.preferences %q runtime %q requires models.%s.provider to be %q, got %q",
+			field, runtimeName, role, expectedProvider, provider,
+		)
+	}
+
+	return nil
+}
+
+func normalizeProvider(provider string) string {
+	switch provider {
+	case "anthropic", "Anthropic":
+		return "anthropic"
+	case "openai", "OpenAI":
+		return "openai"
+	case "google", "Google", "gemini", "Gemini":
+		return "google"
+	default:
+		return provider
+	}
+}
+
+var runtimeProviders = map[string]string{
+	"claude-code": "anthropic",
+	"codex":       "openai",
+	"gemini":      "google",
 }
 
 func (c Config) validateBudget() error {

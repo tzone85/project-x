@@ -70,9 +70,11 @@ func (c *CodexRuntime) SendInput(runner git.CommandRunner, sessionName string, i
 func (c *CodexRuntime) Capabilities() RuntimeCapabilities {
 	return RuntimeCapabilities{
 		SupportsModel: []string{
+			"gpt-5.4",
+			"gpt-5-codex",
+			"gpt-5.2-codex",
 			"o3",
 			"o4-mini",
-			"gpt-4.1",
 		},
 		SupportsGodmode:    false,
 		SupportsLogFile:    false,

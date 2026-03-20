@@ -50,6 +50,9 @@ models:
 # Routing: complexity-based task assignment
 # ---------------------------------------------------------------------------
 routing:
+  # Keep provider/runtime aligned.
+  # Example: if a role prefers "codex", set models.<role>.provider to "openai"
+  # and use an OpenAI model for that role.
   # Stories with complexity <= this go to junior agents (1-13)
   junior_max_complexity: 3
   # Stories with complexity <= this go to intermediate agents (must be >= junior, <= 13)
@@ -149,6 +152,26 @@ pipeline:
     merge:
       max_retries: 1
       on_exhaust: pause
+
+# ---------------------------------------------------------------------------
+# Fallback: Claude-first with explicit OpenAI approval
+# ---------------------------------------------------------------------------
+fallback:
+  # Keep disabled unless you want Claude exhaustion to trigger a fallback path.
+  enabled: false
+  # Ask before switching the remainder of the command/story to OpenAI.
+  require_approval: true
+  # Model used for planner/review/rebase LLM calls after approval.
+  # If OPENAI_API_KEY is present, px first tries the OpenAI API.
+  # If that API quota is also exhausted and codex is installed, px can ask
+  # again and continue the same command via the local codex CLI.
+  llm_model: gpt-5.4
+  # Runtime used to continue in-progress implementation stories.
+  runtime: codex
+  # Model passed to the fallback coding runtime.
+  runtime_model: gpt-5.4
+  # Number of recent Claude output lines to preserve in PX_HANDOFF.md.
+  handoff_output_lines: 80
 
 # ---------------------------------------------------------------------------
 # Runtimes: AI runtime configurations

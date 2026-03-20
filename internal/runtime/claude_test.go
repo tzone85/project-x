@@ -47,7 +47,7 @@ func TestClaudeCodeRuntime_CapabilitiesNoGodmode(t *testing.T) {
 func TestClaudeCodeRuntime_Spawn(t *testing.T) {
 	mock := git.NewMockRunner()
 	mock.AddResponse("", fmt.Errorf("no session")) // has-session fails
-	mock.AddResponse("", nil)                       // new-session succeeds
+	mock.AddResponse("", nil)                      // new-session succeeds
 
 	rt := NewClaudeCodeRuntime(false)
 	cfg := SessionConfig{
@@ -88,7 +88,7 @@ func TestClaudeCodeRuntime_Spawn(t *testing.T) {
 func TestClaudeCodeRuntime_SpawnWithGodmode(t *testing.T) {
 	mock := git.NewMockRunner()
 	mock.AddResponse("", fmt.Errorf("no session")) // has-session
-	mock.AddResponse("", nil)                       // new-session
+	mock.AddResponse("", nil)                      // new-session
 
 	rt := NewClaudeCodeRuntime(true)
 	cfg := SessionConfig{
@@ -131,6 +131,34 @@ func TestClaudeCodeRuntime_SpawnWithSystemPrompt(t *testing.T) {
 	lastArg := newCmd.Args[len(newCmd.Args)-1]
 	if !strings.Contains(lastArg, "--system-prompt") {
 		t.Errorf("expected --system-prompt flag, got %q", lastArg)
+	}
+}
+
+func TestClaudeCodeRuntime_SpawnWithLogFile(t *testing.T) {
+	mock := git.NewMockRunner()
+	mock.AddResponse("", fmt.Errorf("no session"))
+	mock.AddResponse("", nil)
+
+	rt := NewClaudeCodeRuntime(false)
+	cfg := SessionConfig{
+		SessionName: "px-story-1",
+		WorkDir:     "/tmp/work",
+		Goal:        "implement feature X",
+		LogFile:     "/tmp/work/PX_AGENT_TRANSCRIPT.log",
+	}
+
+	err := rt.Spawn(mock, cfg)
+	if err != nil {
+		t.Fatalf("spawn: %v", err)
+	}
+
+	newCmd := mock.Commands[1]
+	lastArg := newCmd.Args[len(newCmd.Args)-1]
+	if !strings.Contains(lastArg, "--output-file") {
+		t.Errorf("expected --output-file flag, got %q", lastArg)
+	}
+	if !strings.Contains(lastArg, "PX_AGENT_TRANSCRIPT.log") {
+		t.Errorf("expected transcript log path in command, got %q", lastArg)
 	}
 }
 
@@ -212,7 +240,7 @@ func TestClaudeCodeRuntime_DetectStatus_PermissionPrompt(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			mock := git.NewMockRunner()
-			mock.AddResponse("", nil)      // has-session
+			mock.AddResponse("", nil) // has-session
 			mock.AddResponse(tc.output, nil)
 
 			rt := NewClaudeCodeRuntime(false)

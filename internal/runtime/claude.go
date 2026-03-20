@@ -107,7 +107,7 @@ func (c *ClaudeCodeRuntime) buildCommand(cfg SessionConfig) string {
 	}
 
 	if cfg.LogFile != "" {
-		parts = append(parts, "--output-file", cfg.LogFile)
+		parts = append(parts, "--output-file", shellQuote(cfg.LogFile))
 	}
 
 	// Pipe the goal via stdin using a heredoc to avoid shell arg length limits.

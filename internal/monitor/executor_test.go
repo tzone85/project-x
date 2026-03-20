@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/tzone85/project-x/internal/agent"
@@ -50,13 +51,14 @@ var errNoSession = fmt.Errorf("no session: px-s-1")
 
 // addSpawnResponses queues the mock responses for a single successful spawn.
 // Pattern: worktree prune, worktree remove (cleanup), worktree add -b,
-//          tmux has-session (not found), tmux new-session.
+//
+//	tmux has-session (not found), tmux new-session.
 func addSpawnResponses(mr *git.MockRunner) {
-	mr.AddResponse("", nil)           // git worktree prune
-	mr.AddResponse("", nil)           // git worktree remove (best-effort cleanup)
-	mr.AddResponse("", nil)           // git worktree add -b
-	mr.AddResponse("", errNoSession)  // tmux has-session -> not found
-	mr.AddResponse("", nil)           // tmux new-session
+	mr.AddResponse("", nil)          // git worktree prune
+	mr.AddResponse("", nil)          // git worktree remove (best-effort cleanup)
+	mr.AddResponse("", nil)          // git worktree add -b
+	mr.AddResponse("", errNoSession) // tmux has-session -> not found
+	mr.AddResponse("", nil)          // tmux new-session
 }
 
 func TestExecutor_SpawnAll(t *testing.T) {
@@ -186,13 +188,51 @@ func TestExecutor_SpawnAll_EmitsEvents(t *testing.T) {
 	}
 }
 
+func TestExecutor_SpawnAll_ConfiguresTranscriptLogForClaude(t *testing.T) {
+	mockRunner := git.NewMockRunner()
+	addSpawnResponses(mockRunner)
+
+	reg := runtime.NewRegistry()
+	reg.Register("claude-code", runtime.NewClaudeCodeRuntime(false))
+	router := runtime.NewRouter(reg, config.Config{})
+
+	stateDir := t.TempDir()
+	executor := NewExecutor(mockRunner, router, config.Config{
+		Workspace: config.WorkspaceConfig{StateDir: stateDir},
+	}, &mockEventStore{}, &mockProjector{})
+
+	stories := map[string]planner.PlannedStory{
+		"s-1": {ID: "s-1", Title: "Setup DB", Description: "Create tables", AcceptanceCriteria: "Tables exist"},
+	}
+	assignments := []Assignment{
+		{StoryID: "s-1", AgentID: "a-1", Role: agent.RoleJunior, Branch: "px/s-1", SessionName: "px-s-1", Wave: 1},
+	}
+
+	results := executor.SpawnAll(".", assignments, stories)
+	if results[0].Error != nil {
+		t.Fatalf("spawn error: %v", results[0].Error)
+	}
+	if results[0].TranscriptPath == "" {
+		t.Fatal("expected transcript path for claude runtime")
+	}
+
+	newCmd := mockRunner.Commands[len(mockRunner.Commands)-1]
+	lastArg := newCmd.Args[len(newCmd.Args)-1]
+	if !strings.Contains(lastArg, "--output-file") {
+		t.Fatalf("expected claude command to include --output-file, got %q", lastArg)
+	}
+	if !strings.Contains(lastArg, transcriptFileName) {
+		t.Fatalf("expected claude command to point at transcript file, got %q", lastArg)
+	}
+}
+
 func TestExecutor_SpawnAll_WorktreeError(t *testing.T) {
 	mockRunner := git.NewMockRunner()
-	mockRunner.AddResponse("", nil)                              // prune
-	mockRunner.AddResponse("", nil)                              // remove (cleanup)
-	mockRunner.AddResponse("", fmt.Errorf("fatal git error"))    // first add fails
-	mockRunner.AddResponse("", nil)                              // branch -D
-	mockRunner.AddResponse("", fmt.Errorf("fatal git error"))    // second add also fails
+	mockRunner.AddResponse("", nil)                           // prune
+	mockRunner.AddResponse("", nil)                           // remove (cleanup)
+	mockRunner.AddResponse("", fmt.Errorf("fatal git error")) // first add fails
+	mockRunner.AddResponse("", nil)                           // branch -D
+	mockRunner.AddResponse("", fmt.Errorf("fatal git error")) // second add also fails
 
 	reg := runtime.NewRegistry()
 	reg.Register("claude-code", runtime.NewClaudeCodeRuntime(false))
@@ -277,11 +317,11 @@ func TestExecutor_SpawnAll_PartialFailure(t *testing.T) {
 	// First assignment succeeds
 	addSpawnResponses(mockRunner)
 	// Second assignment fails at worktree creation
-	mockRunner.AddResponse("", nil)                              // prune
-	mockRunner.AddResponse("", nil)                              // remove (cleanup)
-	mockRunner.AddResponse("", fmt.Errorf("worktree conflict"))  // first add fails
-	mockRunner.AddResponse("", nil)                              // branch -D
-	mockRunner.AddResponse("", fmt.Errorf("worktree conflict"))  // second add also fails
+	mockRunner.AddResponse("", nil)                             // prune
+	mockRunner.AddResponse("", nil)                             // remove (cleanup)
+	mockRunner.AddResponse("", fmt.Errorf("worktree conflict")) // first add fails
+	mockRunner.AddResponse("", nil)                             // branch -D
+	mockRunner.AddResponse("", fmt.Errorf("worktree conflict")) // second add also fails
 
 	reg := runtime.NewRegistry()
 	reg.Register("claude-code", runtime.NewClaudeCodeRuntime(false))

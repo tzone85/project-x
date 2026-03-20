@@ -19,6 +19,7 @@ import (
 // Assignment represents a story dispatched to an agent with its role,
 // branch, and session metadata.
 type Assignment struct {
+	ReqID       string
 	StoryID     string
 	AgentID     string
 	Role        agent.Role
@@ -68,6 +69,7 @@ func (d *Dispatcher) DispatchWave(
 		sessionName := fmt.Sprintf("px-%s", storyID)
 
 		assignments = append(assignments, Assignment{
+			ReqID:       reqID,
 			StoryID:     storyID,
 			AgentID:     agentID,
 			Role:        role,

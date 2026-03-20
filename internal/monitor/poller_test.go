@@ -49,9 +49,9 @@ func (s *safeRunner) Run(dir, name string, args ...string) (string, error) {
 func TestPoller_DetectsCompletedAgent(t *testing.T) {
 	runner := newSafeRunner()
 	// SessionHealth calls: has-session (exists), list-panes, capture-pane (health)
-	runner.AddResponse("", nil)             // tmux has-session -> exists
-	runner.AddResponse("12345 0", nil)      // tmux list-panes -> alive
-	runner.AddResponse("$ ", nil)           // tmux capture-pane (health output hash)
+	runner.AddResponse("", nil)        // tmux has-session -> exists
+	runner.AddResponse("12345 0", nil) // tmux list-panes -> alive
+	runner.AddResponse("$ ", nil)      // tmux capture-pane (health output hash)
 	// pollOnce ReadOutput call for done detection
 	runner.AddResponse("$ ", nil) // tmux capture-pane -> idle prompt (done)
 
@@ -62,7 +62,7 @@ func TestPoller_DetectsCompletedAgent(t *testing.T) {
 		{Assignment: Assignment{StoryID: "s-1", SessionName: "px-s-1"}, WorktreePath: "/tmp/s1", RuntimeName: "claude-code"},
 	}
 
-	p := NewPoller(PollerConfig{PollIntervalMs: 10}, runner, nil, pr, es, nil, nil)
+	p := NewPoller(PollerConfig{PollIntervalMs: 10}, runner, nil, pr, es, nil, nil, nil)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
@@ -82,17 +82,17 @@ func TestPoller_GracefulShutdown(t *testing.T) {
 	runner := newSafeRunner()
 	// Keep returning "working" status for repeated polls
 	for i := 0; i < 300; i++ {
-		runner.AddResponse("", nil)                     // tmux has-session
-		runner.AddResponse("12345 0", nil)              // tmux list-panes
-		runner.AddResponse("still working...", nil)     // capture-pane (health)
-		runner.AddResponse("still working...", nil)     // capture-pane (done check)
+		runner.AddResponse("", nil)                 // tmux has-session
+		runner.AddResponse("12345 0", nil)          // tmux list-panes
+		runner.AddResponse("still working...", nil) // capture-pane (health)
+		runner.AddResponse("still working...", nil) // capture-pane (done check)
 	}
 
 	agents := []ActiveAgent{
 		{Assignment: Assignment{StoryID: "s-1", SessionName: "px-s-1"}, RuntimeName: "claude-code"},
 	}
 
-	p := NewPoller(PollerConfig{PollIntervalMs: 10}, runner, nil, pr, es, nil, nil)
+	p := NewPoller(PollerConfig{PollIntervalMs: 10}, runner, nil, pr, es, nil, nil, nil)
 
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -119,7 +119,7 @@ func TestPoller_EmptyAgentList(t *testing.T) {
 	pr := &mockPipelineRunner{result: pipeline.StagePassed}
 	runner := newSafeRunner()
 
-	p := NewPoller(PollerConfig{PollIntervalMs: 10}, runner, nil, pr, es, nil, nil)
+	p := NewPoller(PollerConfig{PollIntervalMs: 10}, runner, nil, pr, es, nil, nil, nil)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancel()
@@ -136,10 +136,10 @@ func TestPoller_SerializedMerge(t *testing.T) {
 	runner := newSafeRunner()
 	// Both agents show as done on first poll: each needs health check + done check
 	for i := 0; i < 20; i++ {
-		runner.AddResponse("", nil)         // tmux has-session
-		runner.AddResponse("12345 0", nil)  // tmux list-panes
-		runner.AddResponse("$ ", nil)       // capture-pane (health)
-		runner.AddResponse("$ ", nil)       // capture-pane (done check)
+		runner.AddResponse("", nil)        // tmux has-session
+		runner.AddResponse("12345 0", nil) // tmux list-panes
+		runner.AddResponse("$ ", nil)      // capture-pane (health)
+		runner.AddResponse("$ ", nil)      // capture-pane (done check)
 	}
 
 	pr := &mockPipelineRunner{result: pipeline.StagePassed}
@@ -149,7 +149,7 @@ func TestPoller_SerializedMerge(t *testing.T) {
 		{Assignment: Assignment{StoryID: "s-2", SessionName: "px-s-2"}, RuntimeName: "claude-code"},
 	}
 
-	p := NewPoller(PollerConfig{PollIntervalMs: 10}, runner, nil, pr, es, nil, nil)
+	p := NewPoller(PollerConfig{PollIntervalMs: 10}, runner, nil, pr, es, nil, nil, nil)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
@@ -175,7 +175,7 @@ func TestPoller_DeadSessionSkipsPipeline(t *testing.T) {
 		{Assignment: Assignment{StoryID: "s-1", SessionName: "px-s-1"}, RuntimeName: "claude-code"},
 	}
 
-	p := NewPoller(PollerConfig{PollIntervalMs: 10}, runner, nil, pr, es, nil, nil)
+	p := NewPoller(PollerConfig{PollIntervalMs: 10}, runner, nil, pr, es, nil, nil, nil)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
 	defer cancel()

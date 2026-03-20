@@ -114,6 +114,23 @@ func TestClassifyCLIError_BillingExhaustion(t *testing.T) {
 	}
 }
 
+func TestClassifyCLIError_ClaudeExtraUsageExhaustion(t *testing.T) {
+	err := classifyCLIError(
+		fmt.Errorf("exit 1"),
+		[]byte(`{"result":"You're out of extra usage · resets 7pm (Africa/Johannesburg)"}`),
+	)
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		t.Fatal("expected APIError")
+	}
+	if apiErr.Retryable {
+		t.Error("extra usage exhaustion should not be retryable")
+	}
+	if apiErr.StatusCode != 400 {
+		t.Errorf("expected status 400, got %d", apiErr.StatusCode)
+	}
+}
+
 func TestClassifyCLIError_AuthFailure(t *testing.T) {
 	err := classifyCLIError(fmt.Errorf("exit 1"), []byte("Error: authentication failed"))
 	var apiErr *APIError
