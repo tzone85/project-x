@@ -1,0 +1,59 @@
+version: "1"
+
+workspace:
+  state_dir: "/tmp/project-x-pr-smoke"
+  backend: sqlite
+  log_level: info
+
+models:
+  tech_lead:
+    provider: anthropic
+    model: claude-sonnet-4-20250514
+    max_tokens: 16384
+  senior:
+    provider: openai
+    model: gpt-5.4
+    max_tokens: 16384
+  intermediate:
+    provider: openai
+    model: gpt-5.4
+    max_tokens: 16384
+  junior:
+    provider: openai
+    model: gpt-5.4
+    max_tokens: 8192
+  qa:
+    provider: openai
+    model: gpt-5.4
+    max_tokens: 16384
+  supervisor:
+    provider: openai
+    model: gpt-5.4
+    max_tokens: 16384
+
+routing:
+  junior_max_complexity: 3
+  intermediate_max_complexity: 5
+  preferences:
+    - role: junior
+      prefer: codex
+    - role: intermediate
+      prefer: codex
+    - role: senior
+      prefer: codex
+    - role: qa
+      prefer: codex
+    - role: supervisor
+      prefer: codex
+
+merge:
+  auto_merge: false
+  base_branch: main
+
+fallback:
+  enabled: true
+  require_approval: true
+  llm_model: gpt-5.4
+  runtime: codex
+  runtime_model: gpt-5.4
+  handoff_output_lines: 80

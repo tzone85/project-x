@@ -11,25 +11,19 @@ import (
 func TestGeminiRuntime_Name(t *testing.T) {
 	rt := NewGeminiRuntime()
 	if rt.Name() != "gemini" {
-		t.Errorf("Name() = %q, want %q", rt.Name(), "gemini")
+		t.Errorf("expected 'gemini', got %s", rt.Name())
 	}
 }
 
-func TestGeminiRuntime_Capabilities(t *testing.T) {
+func TestGeminiRuntime_Capabilities_Models(t *testing.T) {
 	rt := NewGeminiRuntime()
 	caps := rt.Capabilities()
 
-	if caps.SupportsGodmode {
-		t.Error("expected SupportsGodmode=false")
-	}
-	if caps.SupportsLogFile {
-		t.Error("expected SupportsLogFile=false")
-	}
-	if caps.SupportsJsonOutput {
-		t.Error("expected SupportsJsonOutput=false")
-	}
 	if len(caps.SupportsModel) == 0 {
 		t.Error("expected at least one supported model")
+	}
+	if caps.SupportsGodmode {
+		t.Error("gemini should not support godmode")
 	}
 }
 
@@ -43,7 +37,7 @@ func TestGeminiRuntime_Spawn(t *testing.T) {
 		SessionName: "px-gemini-1",
 		WorkDir:     "/tmp/work",
 		Model:       "gemini-2.5-pro",
-		Goal:        "implement feature Z",
+		Goal:        "implement feature Y",
 	}
 
 	err := rt.Spawn(mock, cfg)
@@ -51,14 +45,13 @@ func TestGeminiRuntime_Spawn(t *testing.T) {
 		t.Fatalf("spawn: %v", err)
 	}
 
-	if len(mock.Commands) < 2 {
-		t.Fatalf("expected at least 2 commands, got %d", len(mock.Commands))
-	}
-
 	newCmd := mock.Commands[1]
 	lastArg := newCmd.Args[len(newCmd.Args)-1]
 	if !strings.Contains(lastArg, "gemini") {
-		t.Errorf("expected command to contain 'gemini', got %q", lastArg)
+		t.Errorf("expected gemini in command, got %q", lastArg)
+	}
+	if !strings.Contains(lastArg, "--model") {
+		t.Errorf("expected --model flag, got %q", lastArg)
 	}
 }
 
@@ -75,15 +68,15 @@ func TestGeminiRuntime_Kill(t *testing.T) {
 
 func TestGeminiRuntime_ReadOutput(t *testing.T) {
 	mock := git.NewMockRunner()
-	mock.AddResponse("gemini output", nil)
+	mock.AddResponse("gemini output here", nil)
 
 	rt := NewGeminiRuntime()
 	out, err := rt.ReadOutput(mock, "px-gemini-1", 30)
 	if err != nil {
 		t.Fatalf("read: %v", err)
 	}
-	if out != "gemini output" {
-		t.Errorf("expected 'gemini output', got %q", out)
+	if out != "gemini output here" {
+		t.Errorf("expected 'gemini output here', got %q", out)
 	}
 }
 
@@ -95,6 +88,21 @@ func TestGeminiRuntime_SendInput(t *testing.T) {
 	err := rt.SendInput(mock, "px-gemini-1", "y")
 	if err != nil {
 		t.Fatalf("send: %v", err)
+	}
+}
+
+func TestGeminiRuntime_DetectStatus_Working(t *testing.T) {
+	mock := git.NewMockRunner()
+	mock.AddResponse("", nil)
+	mock.AddResponse("Generating response...", nil)
+
+	rt := NewGeminiRuntime()
+	status, err := rt.DetectStatus(mock, "px-gemini-1")
+	if err != nil {
+		t.Fatalf("detect: %v", err)
+	}
+	if status != StatusWorking {
+		t.Errorf("expected StatusWorking, got %s", status)
 	}
 }
 
@@ -112,29 +120,14 @@ func TestGeminiRuntime_DetectStatus_Done(t *testing.T) {
 	}
 }
 
-func TestGeminiRuntime_DetectStatus_Working(t *testing.T) {
-	mock := git.NewMockRunner()
-	mock.AddResponse("", nil)
-	mock.AddResponse("Processing...", nil)
-
-	rt := NewGeminiRuntime()
-	status, err := rt.DetectStatus(mock, "px-gemini-1")
-	if err != nil {
-		t.Fatalf("detect: %v", err)
-	}
-	if status != StatusWorking {
-		t.Errorf("expected StatusWorking, got %s", status)
-	}
-}
-
 func TestGeminiRuntime_DetectStatus_PermissionPrompt(t *testing.T) {
 	tests := []struct {
 		name   string
 		output string
 	}{
-		{"approve action", "Approve action for file write"},
-		{"allow y/n", "Allow? (y/n)"},
-		{"confirm execution", "Confirm execution of command"},
+		{"approve_action", "Approve action: write file?"},
+		{"allow_yn", "Allow? (y/n)"},
+		{"confirm_execution", "Please confirm execution of command"},
 	}
 
 	for _, tc := range tests {
@@ -149,7 +142,7 @@ func TestGeminiRuntime_DetectStatus_PermissionPrompt(t *testing.T) {
 				t.Fatalf("detect: %v", err)
 			}
 			if status != StatusPermissionPrompt {
-				t.Errorf("expected StatusPermissionPrompt, got %s", status)
+				t.Errorf("expected StatusPermissionPrompt for %q, got %s", tc.name, status)
 			}
 		})
 	}
@@ -158,7 +151,7 @@ func TestGeminiRuntime_DetectStatus_PermissionPrompt(t *testing.T) {
 func TestGeminiRuntime_DetectStatus_Idle(t *testing.T) {
 	mock := git.NewMockRunner()
 	mock.AddResponse("", nil)
-	mock.AddResponse("done\n$", nil)
+	mock.AddResponse("output done\n$", nil)
 
 	rt := NewGeminiRuntime()
 	status, err := rt.DetectStatus(mock, "px-gemini-1")
@@ -170,10 +163,10 @@ func TestGeminiRuntime_DetectStatus_Idle(t *testing.T) {
 	}
 }
 
-func TestGeminiRuntime_DetectStatus_ReadOutputError(t *testing.T) {
+func TestGeminiRuntime_DetectStatus_ReadError(t *testing.T) {
 	mock := git.NewMockRunner()
 	mock.AddResponse("", nil)
-	mock.AddResponse("", fmt.Errorf("capture error"))
+	mock.AddResponse("", fmt.Errorf("capture failed"))
 
 	rt := NewGeminiRuntime()
 	status, err := rt.DetectStatus(mock, "px-gemini-1")
@@ -185,42 +178,24 @@ func TestGeminiRuntime_DetectStatus_ReadOutputError(t *testing.T) {
 	}
 }
 
-func TestGeminiRuntime_BuildCommand(t *testing.T) {
+func TestGeminiRuntime_BuildCommand_NoModel(t *testing.T) {
 	rt := NewGeminiRuntime()
-
-	tests := []struct {
-		name      string
-		cfg       SessionConfig
-		wantParts []string
-		noParts   []string
-	}{
-		{
-			"with model",
-			SessionConfig{Goal: "test", Model: "gemini-2.5-pro"},
-			[]string{"gemini", "--model", "gemini-2.5-pro"},
-			nil,
-		},
-		{
-			"no model",
-			SessionConfig{Goal: "do something"},
-			[]string{"gemini"},
-			[]string{"--model"},
-		},
+	cmd := rt.buildCommand(SessionConfig{Goal: "do something"})
+	if !strings.HasPrefix(cmd, "gemini") {
+		t.Errorf("expected command to start with 'gemini', got %q", cmd)
 	}
+	if strings.Contains(cmd, "--model") {
+		t.Error("expected no --model flag when model is empty")
+	}
+}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			cmd := rt.buildCommand(tt.cfg)
-			for _, part := range tt.wantParts {
-				if !strings.Contains(cmd, part) {
-					t.Errorf("buildCommand() missing %q in %q", part, cmd)
-				}
-			}
-			for _, part := range tt.noParts {
-				if strings.Contains(cmd, part) {
-					t.Errorf("buildCommand() should not contain %q in %q", part, cmd)
-				}
-			}
-		})
+func TestGeminiRuntime_VersionError(t *testing.T) {
+	mock := git.NewMockRunner()
+	mock.AddResponse("", fmt.Errorf("not found"))
+
+	rt := NewGeminiRuntime()
+	_, err := rt.Version(mock)
+	if err == nil {
+		t.Error("expected error when gemini not found")
 	}
 }

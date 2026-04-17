@@ -304,3 +304,74 @@ func TestClaudeCodeRuntime_DetectStatus_PlanMode(t *testing.T) {
 		t.Errorf("expected StatusPlanMode, got %s", status)
 	}
 }
+
+func TestClaudeCodeRuntime_Version(t *testing.T) {
+	mock := git.NewMockRunner()
+	mock.AddResponse("claude-code 1.2.3\n", nil)
+
+	rt := NewClaudeCodeRuntime(false)
+	ver, err := rt.Version(mock)
+	if err != nil {
+		t.Fatalf("version: %v", err)
+	}
+	if ver != "claude-code 1.2.3" {
+		t.Errorf("expected 'claude-code 1.2.3', got %q", ver)
+	}
+
+	cmd := mock.Commands[0]
+	if cmd.Name != "claude" {
+		t.Errorf("expected 'claude' command, got %s", cmd.Name)
+	}
+	if len(cmd.Args) != 1 || cmd.Args[0] != "--version" {
+		t.Errorf("expected ['--version'] args, got %v", cmd.Args)
+	}
+}
+
+func TestClaudeCodeRuntime_VersionError(t *testing.T) {
+	mock := git.NewMockRunner()
+	mock.AddResponse("", fmt.Errorf("command not found"))
+
+	rt := NewClaudeCodeRuntime(false)
+	_, err := rt.Version(mock)
+	if err == nil {
+		t.Error("expected error when claude CLI not found")
+	}
+}
+
+func TestClaudeCodeRuntime_Health_Healthy(t *testing.T) {
+	mock := git.NewMockRunner()
+	mock.AddResponse("", nil)                     // has-session
+	mock.AddResponse("12345 0 0", nil)             // list-panes
+	mock.AddResponse("some output being done", nil) // capture-pane
+
+	rt := NewClaudeCodeRuntime(false)
+	result, err := rt.Health(mock, "px-story-1")
+	if err != nil {
+		t.Fatalf("health: %v", err)
+	}
+	if result.Status != "healthy" {
+		t.Errorf("expected 'healthy', got %q", result.Status)
+	}
+}
+
+func TestClaudeCodeRuntime_Health_Missing(t *testing.T) {
+	mock := git.NewMockRunner()
+	mock.AddResponse("", fmt.Errorf("no session")) // has-session fails
+
+	rt := NewClaudeCodeRuntime(false)
+	result, err := rt.Health(mock, "px-story-1")
+	if err != nil {
+		t.Fatalf("health: %v", err)
+	}
+	if result.Status != "missing" {
+		t.Errorf("expected 'missing', got %q", result.Status)
+	}
+}
+
+func TestClaudeCodeRuntime_CostTier(t *testing.T) {
+	rt := NewClaudeCodeRuntime(false)
+	caps := rt.Capabilities()
+	if caps.CostTier != CostTierSubscription {
+		t.Errorf("expected CostTierSubscription, got %d", caps.CostTier)
+	}
+}

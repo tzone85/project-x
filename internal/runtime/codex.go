@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 
@@ -31,6 +32,20 @@ func NewCodexRuntime(godmode bool) *CodexRuntime {
 // Name returns "codex".
 func (c *CodexRuntime) Name() string {
 	return "codex"
+}
+
+// Version detects the installed Codex CLI version.
+func (c *CodexRuntime) Version(runner git.CommandRunner) (string, error) {
+	out, err := runner.Run("", "codex", "--version")
+	if err != nil {
+		return "", fmt.Errorf("codex version: %w", err)
+	}
+	return strings.TrimSpace(out), nil
+}
+
+// Health checks the health of a Codex session via tmux.
+func (c *CodexRuntime) Health(runner git.CommandRunner, sessionName string) (tmux.HealthResult, error) {
+	return tmux.SessionHealth(runner, sessionName, ""), nil
 }
 
 // Spawn starts a Codex session inside a new tmux session.
@@ -82,6 +97,7 @@ func (c *CodexRuntime) Capabilities() RuntimeCapabilities {
 		SupportsLogFile:    false,
 		SupportsJsonOutput: false,
 		MaxPromptLength:    0,
+		CostTier:           CostTierAPI,
 	}
 }
 

@@ -2,7 +2,10 @@
 // and provides built-in implementations for Claude Code, Codex, and Gemini.
 package runtime
 
-import "github.com/tzone85/project-x/internal/git"
+import (
+	"github.com/tzone85/project-x/internal/git"
+	"github.com/tzone85/project-x/internal/tmux"
+)
 
 // AgentStatus represents the detected state of an agent session.
 type AgentStatus int
@@ -49,13 +52,24 @@ type SessionConfig struct {
 	LogFile      string
 }
 
+// CostTier classifies how a runtime is billed.
+type CostTier int
+
+const (
+	// CostTierSubscription indicates a flat-rate or subscription-based runtime.
+	CostTierSubscription CostTier = iota
+	// CostTierAPI indicates a per-token/per-request metered runtime.
+	CostTierAPI
+)
+
 // RuntimeCapabilities describes what a runtime supports.
 type RuntimeCapabilities struct {
 	SupportsModel      []string
 	SupportsGodmode    bool
 	SupportsLogFile    bool
 	SupportsJsonOutput bool
-	MaxPromptLength    int // 0 = unlimited
+	MaxPromptLength    int      // 0 = unlimited
+	CostTier           CostTier // subscription vs API-metered billing
 }
 
 // Runtime is the interface for AI coding CLI runtimes.
@@ -64,6 +78,9 @@ type RuntimeCapabilities struct {
 type Runtime interface {
 	// Name returns the unique identifier for this runtime.
 	Name() string
+
+	// Version detects and returns the CLI tool version string.
+	Version(runner git.CommandRunner) (string, error)
 
 	// Spawn starts a new agent session inside a tmux session.
 	Spawn(runner git.CommandRunner, cfg SessionConfig) error
@@ -76,6 +93,9 @@ type Runtime interface {
 
 	// ReadOutput returns the last N lines of output from the agent session.
 	ReadOutput(runner git.CommandRunner, sessionName string, lines int) (string, error)
+
+	// Health checks the health of a running session via tmux.
+	Health(runner git.CommandRunner, sessionName string) (tmux.HealthResult, error)
 
 	// SendInput sends keystrokes to the agent session (e.g. to approve a prompt).
 	SendInput(runner git.CommandRunner, sessionName string, input string) error

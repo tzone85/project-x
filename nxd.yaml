@@ -1,0 +1,115 @@
+version: "1.0"
+
+workspace:
+  state_dir: ~/.nxd-project-x
+  backend: sqlite
+  log_level: info
+
+models:
+  tech_lead:
+    provider: ollama
+    model: gemma4:e4b
+    max_tokens: 16000
+  senior:
+    provider: ollama
+    model: gemma4:e4b
+    max_tokens: 8000
+  intermediate:
+    provider: ollama
+    model: gemma4:e4b
+    max_tokens: 8000
+  junior:
+    provider: ollama
+    model: gemma4:e4b
+    max_tokens: 4000
+  qa:
+    provider: ollama
+    model: gemma4:e4b
+    max_tokens: 8000
+  supervisor:
+    provider: ollama
+    model: gemma4:e4b
+    max_tokens: 4000
+  manager:
+    provider: ollama
+    model: gemma4:e4b
+    max_tokens: 8000
+  investigator:
+    provider: ollama
+    model: gemma4:e4b
+    max_tokens: 8000
+
+routing:
+  junior_max_complexity: 3
+  intermediate_max_complexity: 5
+  max_retries_before_escalation: 2
+  max_qa_failures_before_escalation: 3
+  max_senior_retries: 3
+  max_manager_attempts: 3
+
+monitor:
+  poll_interval_ms: 10000
+  stuck_threshold_s: 180
+
+cleanup:
+  worktree_prune: immediate
+  branch_retention_days: 7
+  log_archive: file
+
+planning:
+  sequential_file_patterns:
+    - "go.mod"
+    - "go.sum"
+    - "Makefile"
+  max_story_complexity: 5
+  godmode: true
+
+merge:
+  auto_merge: true
+  review_before_merge: false
+  base_branch: main
+  mode: local
+
+billing:
+  default_rate: 150
+  currency: USD
+  hours_per_point:
+    1: [0.25, 0.5]
+    2: [0.5, 1.0]
+    3: [1.0, 2.0]
+    5: [2.0, 4.0]
+    8: [4.0, 8.0]
+  llm_costs:
+    mode: subscription
+    rates:
+      gemma4:
+        input_per_1k: 0.0
+        output_per_1k: 0.0
+
+controller:
+  enabled: false
+
+runtimes:
+  gemma:
+    native: true
+    max_iterations: 20
+    concurrency: 1
+    models: [gemma4]
+    command_allowlist:
+      - "go build ./..."
+      - "go test ./..."
+      - "go vet ./..."
+      - "go mod tidy"
+      - "make test"
+      - "make build"
+      - "make lint"
+      - "ls"
+      - "cat"
+      - "head"
+
+qa:
+  success_criteria:
+    - kind: file_exists
+      path: go.mod
+    - kind: command_succeeds
+      value: go build ./...

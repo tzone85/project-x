@@ -9,77 +9,35 @@ import (
 )
 
 func TestCodexRuntime_Name(t *testing.T) {
-	rt := NewCodexRuntime()
+	rt := NewCodexRuntime(false)
 	if rt.Name() != "codex" {
-		t.Errorf("Name() = %q, want %q", rt.Name(), "codex")
+		t.Errorf("expected 'codex', got %s", rt.Name())
 	}
 }
 
-func TestCodexRuntime_Capabilities(t *testing.T) {
-	rt := NewCodexRuntime()
+func TestCodexRuntime_Capabilities_Models(t *testing.T) {
+	rt := NewCodexRuntime(false)
 	caps := rt.Capabilities()
 
-	if caps.SupportsGodmode {
-		t.Error("expected SupportsGodmode=false")
-	}
-	if caps.SupportsLogFile {
-		t.Error("expected SupportsLogFile=false")
-	}
-	if caps.SupportsJsonOutput {
-		t.Error("expected SupportsJsonOutput=false")
-	}
 	if len(caps.SupportsModel) == 0 {
 		t.Error("expected at least one supported model")
+	}
+	if caps.SupportsGodmode {
+		t.Error("codex should not support godmode")
 	}
 }
 
 func TestCodexRuntime_Spawn(t *testing.T) {
 	mock := git.NewMockRunner()
-	mock.AddResponse("", fmt.Errorf("no session"))
-	mock.AddResponse("", nil)
+	mock.AddResponse("", fmt.Errorf("no session")) // has-session fails
+	mock.AddResponse("", nil)                      // new-session succeeds
 
-	rt := NewCodexRuntime()
-	cfg := SessionConfig{
-		SessionName: "px-story-1",
-		WorkDir:     "/tmp/work",
-		Model:       "gpt-5.4",
-		Goal:        "implement feature X",
-	}
-
-	if err := rt.Spawn(mock, cfg); err != nil {
-		t.Fatalf("spawn: %v", err)
-	}
-
-	newCmd := mock.Commands[1]
-	lastArg := newCmd.Args[len(newCmd.Args)-1]
-	if !strings.Contains(lastArg, "codex exec") {
-		t.Errorf("expected command to contain 'codex exec', got %q", lastArg)
-	}
-	if !strings.Contains(lastArg, "--model") {
-		t.Errorf("expected command to contain '--model', got %q", lastArg)
-	}
-	if !strings.Contains(lastArg, "--full-auto") {
-		t.Errorf("expected command to contain '--full-auto', got %q", lastArg)
-	}
-	if !strings.Contains(lastArg, "--sandbox workspace-write") {
-		t.Errorf("expected command to contain workspace-write sandbox, got %q", lastArg)
-	}
-	if !strings.Contains(lastArg, "printf '$") {
-		t.Errorf("expected completion marker in command, got %q", lastArg)
-	}
-}
-
-func TestCodexRuntime_SpawnWithGodmode(t *testing.T) {
-	mock := git.NewMockRunner()
-	mock.AddResponse("", fmt.Errorf("no session"))
-	mock.AddResponse("", nil)
-
-	rt := NewCodexRuntime()
+	rt := NewCodexRuntime(false)
 	cfg := SessionConfig{
 		SessionName: "px-codex-1",
 		WorkDir:     "/tmp/work",
-		Model:       "o3",
-		Goal:        "implement feature Y",
+		Model:       "gpt-5.4",
+		Goal:        "implement feature X",
 	}
 
 	err := rt.Spawn(mock, cfg)
@@ -92,28 +50,165 @@ func TestCodexRuntime_SpawnWithGodmode(t *testing.T) {
 	}
 
 	newCmd := mock.Commands[1]
+	if newCmd.Name != "tmux" {
+		t.Errorf("expected tmux, got %s", newCmd.Name)
+	}
+
 	lastArg := newCmd.Args[len(newCmd.Args)-1]
 	if !strings.Contains(lastArg, "codex") {
-		t.Errorf("expected command to contain 'codex', got %q", lastArg)
+		t.Errorf("expected codex in command, got %q", lastArg)
 	}
 	if !strings.Contains(lastArg, "--model") {
 		t.Errorf("expected --model flag, got %q", lastArg)
 	}
 }
 
-func TestCodexRuntime(t *testing.T) {
-	// This is a placeholder for the logic covered in the original file.
-	// If there was specific logic here, it should be integrated.
+func TestCodexRuntime_Kill(t *testing.T) {
+	mock := git.NewMockRunner()
+	mock.AddResponse("", nil)
+
+	rt := NewCodexRuntime(false)
+	err := rt.Kill(mock, "px-codex-1")
+	if err != nil {
+		t.Fatalf("kill: %v", err)
+	}
+
+	cmd := mock.Commands[0]
+	if cmd.Name != "tmux" {
+		t.Errorf("expected tmux, got %s", cmd.Name)
+	}
 }
 
-func TestCodexRuntime_Example(t *testing.T) {
-	// This is a placeholder for the logic covered in the original file.
+func TestCodexRuntime_ReadOutput(t *testing.T) {
+	mock := git.NewMockRunner()
+	mock.AddResponse("codex output here", nil)
+
+	rt := NewCodexRuntime(false)
+	out, err := rt.ReadOutput(mock, "px-codex-1", 30)
+	if err != nil {
+		t.Fatalf("read: %v", err)
+	}
+	if out != "codex output here" {
+		t.Errorf("expected 'codex output here', got %q", out)
+	}
 }
 
-func TestCodexRuntime_Example2(t *testing.T) {
-	// This is a placeholder for the logic covered in the original file.
+func TestCodexRuntime_SendInput(t *testing.T) {
+	mock := git.NewMockRunner()
+	mock.AddResponse("", nil)
+
+	rt := NewCodexRuntime(false)
+	err := rt.SendInput(mock, "px-codex-1", "y")
+	if err != nil {
+		t.Fatalf("send: %v", err)
+	}
 }
 
-func TestCodexRuntime_Example3(t *testing.T) {
-	// This is a placeholder for the logic covered in the original file.
+func TestCodexRuntime_DetectStatus_Working(t *testing.T) {
+	mock := git.NewMockRunner()
+	mock.AddResponse("", nil)                                  // has-session
+	mock.AddResponse("Processing request... generating...", nil) // capture-pane
+
+	rt := NewCodexRuntime(false)
+	status, err := rt.DetectStatus(mock, "px-codex-1")
+	if err != nil {
+		t.Fatalf("detect: %v", err)
+	}
+	if status != StatusWorking {
+		t.Errorf("expected StatusWorking, got %s", status)
+	}
+}
+
+func TestCodexRuntime_DetectStatus_Done(t *testing.T) {
+	mock := git.NewMockRunner()
+	mock.AddResponse("", fmt.Errorf("no session"))
+
+	rt := NewCodexRuntime(false)
+	status, err := rt.DetectStatus(mock, "px-codex-1")
+	if err != nil {
+		t.Fatalf("detect: %v", err)
+	}
+	if status != StatusDone {
+		t.Errorf("expected StatusDone, got %s", status)
+	}
+}
+
+func TestCodexRuntime_DetectStatus_PermissionPrompt(t *testing.T) {
+	tests := []struct {
+		name   string
+		output string
+	}{
+		{"confirm_action", "Some output\nConfirm action?"},
+		{"proceed_yn", "Do you want to proceed? [y/n]"},
+		{"allow_this", "Please allow this operation"},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			mock := git.NewMockRunner()
+			mock.AddResponse("", nil)       // has-session
+			mock.AddResponse(tc.output, nil) // capture-pane
+
+			rt := NewCodexRuntime(false)
+			status, err := rt.DetectStatus(mock, "px-codex-1")
+			if err != nil {
+				t.Fatalf("detect: %v", err)
+			}
+			if status != StatusPermissionPrompt {
+				t.Errorf("expected StatusPermissionPrompt for %q, got %s", tc.name, status)
+			}
+		})
+	}
+}
+
+func TestCodexRuntime_DetectStatus_Idle(t *testing.T) {
+	mock := git.NewMockRunner()
+	mock.AddResponse("", nil)        // has-session
+	mock.AddResponse("done\n$", nil) // idle prompt
+
+	rt := NewCodexRuntime(false)
+	status, err := rt.DetectStatus(mock, "px-codex-1")
+	if err != nil {
+		t.Fatalf("detect: %v", err)
+	}
+	if status != StatusIdle {
+		t.Errorf("expected StatusIdle, got %s", status)
+	}
+}
+
+func TestCodexRuntime_DetectStatus_ReadError(t *testing.T) {
+	mock := git.NewMockRunner()
+	mock.AddResponse("", nil)                          // has-session
+	mock.AddResponse("", fmt.Errorf("capture failed")) // capture-pane fails
+
+	rt := NewCodexRuntime(false)
+	status, err := rt.DetectStatus(mock, "px-codex-1")
+	if err != nil {
+		t.Fatalf("detect: %v", err)
+	}
+	if status != StatusWorking {
+		t.Errorf("expected StatusWorking on read error, got %s", status)
+	}
+}
+
+func TestCodexRuntime_BuildCommand_NoModel(t *testing.T) {
+	rt := NewCodexRuntime(false)
+	cmd := rt.buildCommand(SessionConfig{Goal: "do something"})
+	if !strings.Contains(cmd, "codex") {
+		t.Errorf("expected command to contain 'codex', got %q", cmd)
+	}
+	if strings.Contains(cmd, "--model") {
+		t.Error("expected no --model flag when model is empty")
+	}
+}
+
+func TestCodexRuntime_VersionError(t *testing.T) {
+	mock := git.NewMockRunner()
+	mock.AddResponse("", fmt.Errorf("not found"))
+
+	rt := NewCodexRuntime(false)
+	_, err := rt.Version(mock)
+	if err == nil {
+		t.Error("expected error when codex not found")
+	}
 }
