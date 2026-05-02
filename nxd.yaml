@@ -12,7 +12,7 @@ models:
     max_tokens: 16000
   senior:
     provider: ollama
-    model: gemma4:e4b
+    model: qwen2.5-coder:14b
     max_tokens: 8000
   intermediate:
     provider: ollama
