@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
 // SQLiteStore implements ProjectionStore by materializing events into
@@ -21,7 +21,7 @@ var _ ProjectionStore = (*SQLiteStore)(nil)
 // NewSQLiteStore opens (or creates) a SQLite database and runs migrations.
 // WAL mode is enabled for concurrent readers.
 func NewSQLiteStore(dsn string) (*SQLiteStore, error) {
-	db, err := sql.Open("sqlite3", dsn)
+	db, err := sql.Open("sqlite", dsn)
 	if err != nil {
 		return nil, fmt.Errorf("open sqlite: %w", err)
 	}

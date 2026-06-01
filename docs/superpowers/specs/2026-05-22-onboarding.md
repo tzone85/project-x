@@ -26,7 +26,6 @@ deep dive, with rendered SVG diagrams.
 | Tool | Why | Install |
 |------|-----|---------|
 | Go ≥ 1.22 | Build `px` (uses 1.22 method-based routing) | [go.dev/dl](https://go.dev/dl/) |
-| CGO toolchain | `go-sqlite3` requires it | macOS: Xcode CLT; Linux: `build-essential` |
 | `tmux` | Agent sessions live in tmux panes | `brew install tmux` / `apt install tmux` |
 | `git` ≥ 2.30 | Worktrees + rebase | preinstalled on most systems |
 | `gh` | PR create + auto-merge | `brew install gh` |
@@ -59,10 +58,8 @@ make lint               # requires golangci-lint
 ./px config show
 ```
 
-If `make test` passes, the wiring is intact. If `make build` works but
-`make test` fails with `cgo: C compiler "gcc" not found`, install the CGO
-toolchain. The `modernc.org/sqlite` migration is on the roadmap to remove
-this requirement.
+If `make test` passes, the wiring is intact. `px` uses the pure-Go
+`modernc.org/sqlite` driver so no C toolchain is required at build time.
 
 ---
 

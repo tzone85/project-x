@@ -1,5 +1,11 @@
 version: 2
 
+project_name: px-dispatch
+
+before:
+  hooks:
+    - go mod tidy
+
 builds:
   - id: px
     main: ./cmd/px
@@ -7,35 +13,130 @@ builds:
     ldflags:
       - -s -w
       - -X github.com/tzone85/px-dispatch/internal/cli.version={{.Version}}
+      - -X github.com/tzone85/px-dispatch/internal/cli.commit={{.Commit}}
+      - -X github.com/tzone85/px-dispatch/internal/cli.buildDate={{.Date}}
     env:
-      - CGO_ENABLED=1
+      - CGO_ENABLED=0
     goos:
       - linux
       - darwin
+      - windows
     goarch:
       - amd64
       - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
 
 archives:
   - id: default
-    format: tar.gz
-    name_template: "px_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    formats: [tar.gz]
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
     format_overrides:
       - goos: windows
-        format: zip
+        formats: [zip]
+    files:
+      - LICENSE
+      - README.md
+      - px.config.example.yaml
 
 checksum:
-  name_template: "checksums.txt"
+  name_template: checksums.txt
+  algorithm: sha256
+
+sboms:
+  - artifacts: archive
+    documents:
+      - "{{ .ProjectName }}_{{ .Version }}.sbom.json"
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
 
 changelog:
   sort: asc
+  use: github
+  groups:
+    - title: Features
+      regexp: "^feat(\\(.+\\))?!?:"
+      order: 0
+    - title: Fixes
+      regexp: "^fix(\\(.+\\))?!?:"
+      order: 1
+    - title: Performance
+      regexp: "^perf(\\(.+\\))?!?:"
+      order: 2
+    - title: Other
+      order: 999
   filters:
     exclude:
       - "^docs:"
       - "^test:"
       - "^chore:"
+      - "^ci:"
+      - merge conflict
+      - Merge pull request
+      - Merge remote-tracking branch
+      - Merge branch
+
+homebrew_casks:
+  - name: px
+    binaries:
+      - px
+    repository:
+      owner: tzone85
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    homepage: https://github.com/tzone85/px-dispatch
+    description: Autonomous AI agent orchestration for the full software development lifecycle.
+    license: Apache-2.0
+    dependencies:
+      - formula: tmux
+      - formula: git
+      - formula: gh
+
+dockers_v2:
+  - id: px-multiarch
+    images:
+      - ghcr.io/tzone85/px-dispatch
+    tags:
+      - "{{ .Version }}"
+      - latest
+    dockerfile: Dockerfile
+    platforms:
+      - linux/amd64
+      - linux/arm64
+    labels:
+      org.opencontainers.image.title: "{{ .ProjectName }}"
+      org.opencontainers.image.description: Autonomous AI agent orchestration
+      org.opencontainers.image.source: https://github.com/tzone85/px-dispatch
+      org.opencontainers.image.version: "{{ .Version }}"
+      org.opencontainers.image.revision: "{{ .Commit }}"
+      org.opencontainers.image.created: "{{ .Date }}"
+      org.opencontainers.image.licenses: Apache-2.0
 
 release:
   github:
     owner: tzone85
     name: px-dispatch
+  draft: false
+  prerelease: auto
+  mode: replace
+  header: |
+    ## px-dispatch {{ .Tag }}
+
+    Install with Homebrew:
+    ```
+    brew install tzone85/tap/px
+    ```
+
+    Or pull the Docker image:
+    ```
+    docker pull ghcr.io/tzone85/px-dispatch:{{ .Version }}
+    ```
+  footer: |
+    **Full Changelog**: https://github.com/tzone85/px-dispatch/compare/{{ .PreviousTag }}...{{ .Tag }}

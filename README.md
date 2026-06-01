@@ -411,7 +411,7 @@ cd px-dispatch
 # Build
 make build
 
-# Test (requires CGO for SQLite)
+# Test (pure-Go SQLite — no CGO required)
 make test
 
 # Lint
@@ -428,9 +428,9 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for code style, PR process, and architect
 ## Roadmap
 
 - [ ] VHS demo tape for automated GIF generation
-- [ ] Pure-Go SQLite driver (`modernc.org/sqlite`) to eliminate CGO requirement
-- [ ] Cross-platform binary releases via GoReleaser
-- [ ] Homebrew tap (`brew install tzone85/tap/px`)
+- [x] Pure-Go SQLite driver (`modernc.org/sqlite`) — CGO no longer required
+- [x] Cross-platform binary releases via GoReleaser (darwin/linux/windows × amd64/arm64)
+- [x] Homebrew tap (`brew install tzone85/tap/px`)
 - [ ] Multi-repo support (orchestrate across multiple repositories)
 - [ ] Webhook notifications (Slack, Discord, email)
 - [ ] Agent reputation scoring and adaptive routing

@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	tea "github.com/charmbracelet/bubbletea"
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 	"github.com/tzone85/px-dispatch/internal/state"
 )
 
@@ -458,7 +458,7 @@ func TestFetchDataCmd_EventStoreError(t *testing.T) {
 }
 
 func TestFetchDataCmd_WithDB(t *testing.T) {
-	db, err := sql.Open("sqlite3", ":memory:")
+	db, err := sql.Open("sqlite", ":memory:")
 	if err != nil {
 		t.Fatalf("open db: %v", err)
 	}

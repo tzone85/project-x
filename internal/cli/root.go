@@ -14,7 +14,11 @@ import (
 
 var (
 	cfgFile string
-	version = "dev"
+	// Build metadata. Default values are used for non-release builds (e.g.
+	// `go build`, `go install`). GoReleaser overrides them at link time.
+	version   = "dev"
+	commit    = "none"
+	buildDate = "unknown"
 )
 
 // appState holds the initialized stores and config for subcommands.
@@ -87,6 +91,8 @@ func newVersionCmd() *cobra.Command {
 		Short: "Print the version",
 		Run: func(cmd *cobra.Command, args []string) {
 			fmt.Printf("px %s\n", version)
+			fmt.Printf("  commit:     %s\n", commit)
+			fmt.Printf("  built:      %s\n", buildDate)
 		},
 	}
 }
