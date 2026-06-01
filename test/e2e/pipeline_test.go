@@ -35,7 +35,7 @@ func setupTestStores(t *testing.T) (state.EventStore, *state.SQLiteStore) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { ps.Close() })
+	t.Cleanup(func() { _ = ps.Close() })
 
 	return es, ps
 }

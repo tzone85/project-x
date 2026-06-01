@@ -37,9 +37,9 @@ func TestFileStore_FilterByType(t *testing.T) {
 	path := filepath.Join(dir, "events.jsonl")
 	fs, _ := NewFileStore(path)
 
-	fs.Append(NewEvent(EventReqSubmitted, "user", "", map[string]any{"id": "r1"}))
-	fs.Append(NewEvent(EventStoryCreated, "planner", "s1", map[string]any{"id": "s1"}))
-	fs.Append(NewEvent(EventReqSubmitted, "user", "", map[string]any{"id": "r2"}))
+	_ = fs.Append(NewEvent(EventReqSubmitted, "user", "", map[string]any{"id": "r1"}))
+	_ = fs.Append(NewEvent(EventStoryCreated, "planner", "s1", map[string]any{"id": "s1"}))
+	_ = fs.Append(NewEvent(EventReqSubmitted, "user", "", map[string]any{"id": "r2"}))
 
 	events, _ := fs.List(EventFilter{Type: EventReqSubmitted})
 	if len(events) != 2 {
@@ -52,9 +52,9 @@ func TestFileStore_FilterByStoryID(t *testing.T) {
 	path := filepath.Join(dir, "events.jsonl")
 	fs, _ := NewFileStore(path)
 
-	fs.Append(NewEvent(EventStoryReviewFailed, "reviewer", "s1", map[string]any{}))
-	fs.Append(NewEvent(EventStoryReviewFailed, "reviewer", "s2", map[string]any{}))
-	fs.Append(NewEvent(EventStoryReviewFailed, "reviewer", "s1", map[string]any{}))
+	_ = fs.Append(NewEvent(EventStoryReviewFailed, "reviewer", "s1", map[string]any{}))
+	_ = fs.Append(NewEvent(EventStoryReviewFailed, "reviewer", "s2", map[string]any{}))
+	_ = fs.Append(NewEvent(EventStoryReviewFailed, "reviewer", "s1", map[string]any{}))
 
 	events, _ := fs.List(EventFilter{StoryID: "s1"})
 	if len(events) != 2 {
@@ -67,8 +67,8 @@ func TestFileStore_FilterByAgentID(t *testing.T) {
 	path := filepath.Join(dir, "events.jsonl")
 	fs, _ := NewFileStore(path)
 
-	fs.Append(NewEvent(EventStoryReviewFailed, "reviewer", "s1", map[string]any{}))
-	fs.Append(NewEvent(EventStoryReviewFailed, "monitor", "s1", map[string]any{}))
+	_ = fs.Append(NewEvent(EventStoryReviewFailed, "reviewer", "s1", map[string]any{}))
+	_ = fs.Append(NewEvent(EventStoryReviewFailed, "monitor", "s1", map[string]any{}))
 
 	events, _ := fs.List(EventFilter{AgentID: "reviewer", StoryID: "s1"})
 	if len(events) != 1 {
@@ -81,9 +81,9 @@ func TestFileStore_Count(t *testing.T) {
 	path := filepath.Join(dir, "events.jsonl")
 	fs, _ := NewFileStore(path)
 
-	fs.Append(NewEvent(EventStoryReviewFailed, "reviewer", "s1", map[string]any{}))
-	fs.Append(NewEvent(EventStoryReviewFailed, "reviewer", "s1", map[string]any{}))
-	fs.Append(NewEvent(EventStoryReviewFailed, "reviewer", "s2", map[string]any{}))
+	_ = fs.Append(NewEvent(EventStoryReviewFailed, "reviewer", "s1", map[string]any{}))
+	_ = fs.Append(NewEvent(EventStoryReviewFailed, "reviewer", "s1", map[string]any{}))
+	_ = fs.Append(NewEvent(EventStoryReviewFailed, "reviewer", "s2", map[string]any{}))
 
 	count, _ := fs.Count(EventFilter{Type: EventStoryReviewFailed, StoryID: "s1"})
 	if count != 2 {
@@ -97,7 +97,7 @@ func TestFileStore_Limit(t *testing.T) {
 	fs, _ := NewFileStore(path)
 
 	for i := 0; i < 10; i++ {
-		fs.Append(NewEvent(EventStoryCreated, "planner", "", map[string]any{}))
+		_ = fs.Append(NewEvent(EventStoryCreated, "planner", "", map[string]any{}))
 	}
 
 	events, _ := fs.List(EventFilter{Limit: 3})
@@ -110,7 +110,7 @@ func TestFileStore_PersistsToDisk(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "events.jsonl")
 	fs1, _ := NewFileStore(path)
-	fs1.Append(NewEvent(EventReqSubmitted, "user", "", map[string]any{"id": "r1"}))
+	_ = fs1.Append(NewEvent(EventReqSubmitted, "user", "", map[string]any{"id": "r1"}))
 
 	// Re-open from same file
 	fs2, _ := NewFileStore(path)
@@ -125,8 +125,8 @@ func TestFileStore_All(t *testing.T) {
 	path := filepath.Join(dir, "events.jsonl")
 	fs, _ := NewFileStore(path)
 
-	fs.Append(NewEvent(EventReqSubmitted, "user", "", map[string]any{"id": "r1"}))
-	fs.Append(NewEvent(EventStoryCreated, "planner", "s1", map[string]any{"id": "s1"}))
+	_ = fs.Append(NewEvent(EventReqSubmitted, "user", "", map[string]any{"id": "r1"}))
+	_ = fs.Append(NewEvent(EventStoryCreated, "planner", "s1", map[string]any{"id": "s1"}))
 
 	events, _ := fs.All()
 	if len(events) != 2 {
@@ -150,9 +150,9 @@ func TestFileStore_CombinedFilters(t *testing.T) {
 	path := filepath.Join(dir, "events.jsonl")
 	fs, _ := NewFileStore(path)
 
-	fs.Append(NewEvent(EventStoryReviewFailed, "reviewer", "s1", map[string]any{}))
-	fs.Append(NewEvent(EventStoryReviewFailed, "monitor", "s1", map[string]any{}))
-	fs.Append(NewEvent(EventStoryCompleted, "reviewer", "s1", map[string]any{}))
+	_ = fs.Append(NewEvent(EventStoryReviewFailed, "reviewer", "s1", map[string]any{}))
+	_ = fs.Append(NewEvent(EventStoryReviewFailed, "monitor", "s1", map[string]any{}))
+	_ = fs.Append(NewEvent(EventStoryCompleted, "reviewer", "s1", map[string]any{}))
 
 	events, _ := fs.List(EventFilter{Type: EventStoryReviewFailed, AgentID: "reviewer", StoryID: "s1"})
 	if len(events) != 1 {

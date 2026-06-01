@@ -34,8 +34,8 @@ func (c *CodexCLIClient) Complete(ctx context.Context, req CompletionRequest) (C
 		return CompletionResponse{}, fmt.Errorf("create codex output file: %w", err)
 	}
 	outputPath := outputFile.Name()
-	outputFile.Close()
-	defer os.Remove(outputPath)
+	_ = outputFile.Close()
+	defer func() { _ = os.Remove(outputPath) }()
 
 	prompt := buildCLIPrompt(req)
 	args := c.buildArgs(req, outputPath)

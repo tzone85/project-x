@@ -12,7 +12,7 @@ func newTestStore(t *testing.T) *SQLiteStore {
 	if err != nil {
 		t.Fatalf("NewSQLiteStore: %v", err)
 	}
-	t.Cleanup(func() { store.Close() })
+	t.Cleanup(func() { _ = store.Close() })
 	return store
 }
 
@@ -71,7 +71,7 @@ func TestSQLiteStore_ProjectStoryLifecycle(t *testing.T) {
 	store := newTestStore(t)
 
 	// Submit requirement first
-	store.Project(Event{
+	_ = store.Project(Event{
 		ID:   "evt-0",
 		Type: EventReqSubmitted,
 		Payload: mustMarshal(t, ReqSubmittedPayload{
@@ -84,7 +84,7 @@ func TestSQLiteStore_ProjectStoryLifecycle(t *testing.T) {
 	})
 
 	// Create story
-	store.Project(Event{
+	_ = store.Project(Event{
 		ID:      "evt-1",
 		Type:    EventStoryCreated,
 		StoryID: "story-1",
@@ -116,7 +116,7 @@ func TestSQLiteStore_ProjectStoryLifecycle(t *testing.T) {
 	assertStoryStatus("draft")
 
 	// Assign
-	store.Project(Event{
+	_ = store.Project(Event{
 		ID:      "evt-2",
 		Type:    EventStoryAssigned,
 		StoryID: "story-1",
@@ -129,7 +129,7 @@ func TestSQLiteStore_ProjectStoryLifecycle(t *testing.T) {
 	assertStoryStatus("assigned")
 
 	// Start
-	store.Project(Event{
+	_ = store.Project(Event{
 		ID:        "evt-3",
 		Type:      EventStoryStarted,
 		StoryID:   "story-1",
@@ -138,7 +138,7 @@ func TestSQLiteStore_ProjectStoryLifecycle(t *testing.T) {
 	assertStoryStatus("in_progress")
 
 	// Complete (moves to review)
-	store.Project(Event{
+	_ = store.Project(Event{
 		ID:        "evt-4",
 		Type:      EventStoryCompleted,
 		StoryID:   "story-1",
@@ -147,7 +147,7 @@ func TestSQLiteStore_ProjectStoryLifecycle(t *testing.T) {
 	assertStoryStatus("review")
 
 	// Review passed (moves to qa)
-	store.Project(Event{
+	_ = store.Project(Event{
 		ID:        "evt-5",
 		Type:      EventStoryReviewPassed,
 		StoryID:   "story-1",
@@ -156,7 +156,7 @@ func TestSQLiteStore_ProjectStoryLifecycle(t *testing.T) {
 	assertStoryStatus("qa")
 
 	// QA passed (moves to pr_submitted)
-	store.Project(Event{
+	_ = store.Project(Event{
 		ID:        "evt-6",
 		Type:      EventStoryQAPassed,
 		StoryID:   "story-1",
@@ -165,7 +165,7 @@ func TestSQLiteStore_ProjectStoryLifecycle(t *testing.T) {
 	assertStoryStatus("pr_submitted")
 
 	// Merged
-	store.Project(Event{
+	_ = store.Project(Event{
 		ID:        "evt-7",
 		Type:      EventStoryMerged,
 		StoryID:   "story-1",
@@ -178,7 +178,7 @@ func TestSQLiteStore_ListStoriesFiltered(t *testing.T) {
 	store := newTestStore(t)
 
 	// Create requirement and two stories
-	store.Project(Event{
+	_ = store.Project(Event{
 		ID:   "evt-0",
 		Type: EventReqSubmitted,
 		Payload: mustMarshal(t, ReqSubmittedPayload{
@@ -186,7 +186,7 @@ func TestSQLiteStore_ListStoriesFiltered(t *testing.T) {
 		}),
 		Timestamp: "2026-01-01T00:00:00Z",
 	})
-	store.Project(Event{
+	_ = store.Project(Event{
 		ID:   "evt-0b",
 		Type: EventReqSubmitted,
 		Payload: mustMarshal(t, ReqSubmittedPayload{
@@ -195,21 +195,21 @@ func TestSQLiteStore_ListStoriesFiltered(t *testing.T) {
 		Timestamp: "2026-01-01T00:00:01Z",
 	})
 
-	store.Project(Event{
+	_ = store.Project(Event{
 		ID: "evt-1", Type: EventStoryCreated, StoryID: "story-1",
 		Payload: mustMarshal(t, StoryCreatedPayload{
 			ID: "story-1", ReqID: "req-1", Title: "S1", Description: "D", Complexity: 1,
 		}),
 		Timestamp: "2026-01-01T00:01:00Z",
 	})
-	store.Project(Event{
+	_ = store.Project(Event{
 		ID: "evt-2", Type: EventStoryCreated, StoryID: "story-2",
 		Payload: mustMarshal(t, StoryCreatedPayload{
 			ID: "story-2", ReqID: "req-1", Title: "S2", Description: "D", Complexity: 2,
 		}),
 		Timestamp: "2026-01-01T00:02:00Z",
 	})
-	store.Project(Event{
+	_ = store.Project(Event{
 		ID: "evt-3", Type: EventStoryCreated, StoryID: "story-3",
 		Payload: mustMarshal(t, StoryCreatedPayload{
 			ID: "story-3", ReqID: "req-2", Title: "S3", Description: "D", Complexity: 1,
@@ -218,7 +218,7 @@ func TestSQLiteStore_ListStoriesFiltered(t *testing.T) {
 	})
 
 	// Start story-1 to change its status
-	store.Project(Event{
+	_ = store.Project(Event{
 		ID: "evt-4", Type: EventStoryAssigned, StoryID: "story-1",
 		Payload: mustMarshal(t, StoryAssignedPayload{AgentID: "a1", Wave: 1}),
 		Timestamp: "2026-01-01T00:04:00Z",
@@ -258,7 +258,7 @@ func TestSQLiteStore_ListStoriesFiltered(t *testing.T) {
 func TestSQLiteStore_ListRequirementsFiltered(t *testing.T) {
 	store := newTestStore(t)
 
-	store.Project(Event{
+	_ = store.Project(Event{
 		ID:   "evt-1",
 		Type: EventReqSubmitted,
 		Payload: mustMarshal(t, ReqSubmittedPayload{
@@ -266,7 +266,7 @@ func TestSQLiteStore_ListRequirementsFiltered(t *testing.T) {
 		}),
 		Timestamp: "2026-01-01T00:00:00Z",
 	})
-	store.Project(Event{
+	_ = store.Project(Event{
 		ID:   "evt-2",
 		Type: EventReqSubmitted,
 		Payload: mustMarshal(t, ReqSubmittedPayload{
@@ -274,7 +274,7 @@ func TestSQLiteStore_ListRequirementsFiltered(t *testing.T) {
 		}),
 		Timestamp: "2026-01-01T00:01:00Z",
 	})
-	store.Project(Event{
+	_ = store.Project(Event{
 		ID:   "evt-3",
 		Type: EventReqSubmitted,
 		Payload: mustMarshal(t, ReqSubmittedPayload{
@@ -316,7 +316,7 @@ func TestSQLiteStore_ListRequirementsFiltered(t *testing.T) {
 func TestSQLiteStore_ArchiveRequirement(t *testing.T) {
 	store := newTestStore(t)
 
-	store.Project(Event{
+	_ = store.Project(Event{
 		ID:   "evt-1",
 		Type: EventReqSubmitted,
 		Payload: mustMarshal(t, ReqSubmittedPayload{
@@ -341,7 +341,7 @@ func TestSQLiteStore_ArchiveRequirement(t *testing.T) {
 func TestSQLiteStore_ArchiveStoriesByReq(t *testing.T) {
 	store := newTestStore(t)
 
-	store.Project(Event{
+	_ = store.Project(Event{
 		ID:   "evt-0",
 		Type: EventReqSubmitted,
 		Payload: mustMarshal(t, ReqSubmittedPayload{
@@ -351,7 +351,7 @@ func TestSQLiteStore_ArchiveStoriesByReq(t *testing.T) {
 	})
 
 	for i, id := range []string{"story-1", "story-2"} {
-		store.Project(Event{
+		_ = store.Project(Event{
 			ID: "evt-s" + string(rune('0'+i)), Type: EventStoryCreated, StoryID: id,
 			Payload: mustMarshal(t, StoryCreatedPayload{
 				ID: id, ReqID: "req-1", Title: "S", Description: "D", Complexity: 1,
@@ -378,7 +378,7 @@ func TestSQLiteStore_ArchiveStoriesByReq(t *testing.T) {
 func TestSQLiteStore_PaginationLimitOffset(t *testing.T) {
 	store := newTestStore(t)
 
-	store.Project(Event{
+	_ = store.Project(Event{
 		ID:   "evt-0",
 		Type: EventReqSubmitted,
 		Payload: mustMarshal(t, ReqSubmittedPayload{
@@ -389,7 +389,7 @@ func TestSQLiteStore_PaginationLimitOffset(t *testing.T) {
 
 	for i := range 5 {
 		id := "story-" + string(rune('A'+i))
-		store.Project(Event{
+		_ = store.Project(Event{
 			ID: "evt-" + id, Type: EventStoryCreated, StoryID: id,
 			Payload: mustMarshal(t, StoryCreatedPayload{
 				ID: id, ReqID: "req-1", Title: "S" + id, Description: "D", Complexity: 1,
@@ -429,7 +429,7 @@ func TestSQLiteStore_PaginationLimitOffset(t *testing.T) {
 func TestSQLiteStore_ListAgents(t *testing.T) {
 	store := newTestStore(t)
 
-	store.Project(Event{
+	_ = store.Project(Event{
 		ID:      "evt-1",
 		Type:    EventAgentSpawned,
 		AgentID: "agent-1",
@@ -443,7 +443,7 @@ func TestSQLiteStore_ListAgents(t *testing.T) {
 		}),
 		Timestamp: "2026-01-01T00:00:00Z",
 	})
-	store.Project(Event{
+	_ = store.Project(Event{
 		ID:      "evt-2",
 		Type:    EventAgentSpawned,
 		AgentID: "agent-2",
@@ -488,7 +488,7 @@ func TestSQLiteStore_ListAgents(t *testing.T) {
 func TestSQLiteStore_ListEscalations(t *testing.T) {
 	store := newTestStore(t)
 
-	store.Project(Event{
+	_ = store.Project(Event{
 		ID:      "evt-1",
 		Type:    EventEscalationCreated,
 		StoryID: "story-1",
@@ -500,7 +500,7 @@ func TestSQLiteStore_ListEscalations(t *testing.T) {
 		}),
 		Timestamp: "2026-01-01T00:00:00Z",
 	})
-	store.Project(Event{
+	_ = store.Project(Event{
 		ID:      "evt-2",
 		Type:    EventEscalationCreated,
 		StoryID: "story-2",
@@ -536,7 +536,7 @@ func TestSQLiteStore_ListEscalations(t *testing.T) {
 func TestSQLiteStore_ListStoryDeps(t *testing.T) {
 	store := newTestStore(t)
 
-	store.Project(Event{
+	_ = store.Project(Event{
 		ID:   "evt-0",
 		Type: EventReqSubmitted,
 		Payload: mustMarshal(t, ReqSubmittedPayload{
@@ -546,7 +546,7 @@ func TestSQLiteStore_ListStoryDeps(t *testing.T) {
 	})
 
 	// Story-B depends on Story-A
-	store.Project(Event{
+	_ = store.Project(Event{
 		ID: "evt-1", Type: EventStoryCreated, StoryID: "story-A",
 		Payload: mustMarshal(t, StoryCreatedPayload{
 			ID: "story-A", ReqID: "req-1", Title: "SA", Description: "D",
@@ -554,7 +554,7 @@ func TestSQLiteStore_ListStoryDeps(t *testing.T) {
 		}),
 		Timestamp: "2026-01-01T00:01:00Z",
 	})
-	store.Project(Event{
+	_ = store.Project(Event{
 		ID: "evt-2", Type: EventStoryCreated, StoryID: "story-B",
 		Payload: mustMarshal(t, StoryCreatedPayload{
 			ID: "story-B", ReqID: "req-1", Title: "SB", Description: "D",
@@ -581,7 +581,7 @@ func TestSQLiteStore_ListStoryDeps(t *testing.T) {
 func TestSQLiteStore_GetStory_OwnedFiles(t *testing.T) {
 	store := newTestStore(t)
 
-	store.Project(Event{
+	_ = store.Project(Event{
 		ID:   "evt-0",
 		Type: EventReqSubmitted,
 		Payload: mustMarshal(t, ReqSubmittedPayload{
@@ -591,7 +591,7 @@ func TestSQLiteStore_GetStory_OwnedFiles(t *testing.T) {
 	})
 
 	expected := []string{"internal/api/handler.go", "internal/api/routes.go", "pkg/util/helpers.go"}
-	store.Project(Event{
+	_ = store.Project(Event{
 		ID: "evt-1", Type: EventStoryCreated, StoryID: "story-1",
 		Payload: mustMarshal(t, StoryCreatedPayload{
 			ID: "story-1", ReqID: "req-1", Title: "S", Description: "D",
@@ -621,7 +621,7 @@ func TestSQLiteStore_GetStory_OwnedFiles(t *testing.T) {
 func TestSQLiteStore_StoryPRCreated(t *testing.T) {
 	store := newTestStore(t)
 
-	store.Project(Event{
+	_ = store.Project(Event{
 		ID:   "evt-0",
 		Type: EventReqSubmitted,
 		Payload: mustMarshal(t, ReqSubmittedPayload{
@@ -630,7 +630,7 @@ func TestSQLiteStore_StoryPRCreated(t *testing.T) {
 		Timestamp: "2026-01-01T00:00:00Z",
 	})
 
-	store.Project(Event{
+	_ = store.Project(Event{
 		ID: "evt-1", Type: EventStoryCreated, StoryID: "story-1",
 		Payload: mustMarshal(t, StoryCreatedPayload{
 			ID: "story-1", ReqID: "req-1", Title: "S", Description: "D", Complexity: 1,
@@ -638,7 +638,7 @@ func TestSQLiteStore_StoryPRCreated(t *testing.T) {
 		Timestamp: "2026-01-01T00:01:00Z",
 	})
 
-	store.Project(Event{
+	_ = store.Project(Event{
 		ID: "evt-2", Type: EventStoryPRCreated, StoryID: "story-1",
 		Payload: mustMarshal(t, StoryPRCreatedPayload{
 			PRUrl:    "https://github.com/org/repo/pull/42",
@@ -665,7 +665,7 @@ func TestSQLiteStore_StoryPRCreated(t *testing.T) {
 func TestSQLiteStore_ReviewFailed(t *testing.T) {
 	store := newTestStore(t)
 
-	store.Project(Event{
+	_ = store.Project(Event{
 		ID:   "evt-0",
 		Type: EventReqSubmitted,
 		Payload: mustMarshal(t, ReqSubmittedPayload{
@@ -674,7 +674,7 @@ func TestSQLiteStore_ReviewFailed(t *testing.T) {
 		Timestamp: "2026-01-01T00:00:00Z",
 	})
 
-	store.Project(Event{
+	_ = store.Project(Event{
 		ID: "evt-1", Type: EventStoryCreated, StoryID: "story-1",
 		Payload: mustMarshal(t, StoryCreatedPayload{
 			ID: "story-1", ReqID: "req-1", Title: "S", Description: "D", Complexity: 1,
@@ -683,11 +683,11 @@ func TestSQLiteStore_ReviewFailed(t *testing.T) {
 	})
 
 	// Complete story, then review fails
-	store.Project(Event{
+	_ = store.Project(Event{
 		ID: "evt-2", Type: EventStoryCompleted, StoryID: "story-1",
 		Timestamp: "2026-01-01T00:02:00Z",
 	})
-	store.Project(Event{
+	_ = store.Project(Event{
 		ID: "evt-3", Type: EventStoryReviewFailed, StoryID: "story-1",
 		Timestamp: "2026-01-01T00:03:00Z",
 	})
@@ -704,7 +704,7 @@ func TestSQLiteStore_ReviewFailed(t *testing.T) {
 func TestSQLiteStore_QAFailed(t *testing.T) {
 	store := newTestStore(t)
 
-	store.Project(Event{
+	_ = store.Project(Event{
 		ID:   "evt-0",
 		Type: EventReqSubmitted,
 		Payload: mustMarshal(t, ReqSubmittedPayload{
@@ -713,7 +713,7 @@ func TestSQLiteStore_QAFailed(t *testing.T) {
 		Timestamp: "2026-01-01T00:00:00Z",
 	})
 
-	store.Project(Event{
+	_ = store.Project(Event{
 		ID: "evt-1", Type: EventStoryCreated, StoryID: "story-1",
 		Payload: mustMarshal(t, StoryCreatedPayload{
 			ID: "story-1", ReqID: "req-1", Title: "S", Description: "D", Complexity: 1,
@@ -721,15 +721,15 @@ func TestSQLiteStore_QAFailed(t *testing.T) {
 		Timestamp: "2026-01-01T00:01:00Z",
 	})
 
-	store.Project(Event{
+	_ = store.Project(Event{
 		ID: "evt-2", Type: EventStoryCompleted, StoryID: "story-1",
 		Timestamp: "2026-01-01T00:02:00Z",
 	})
-	store.Project(Event{
+	_ = store.Project(Event{
 		ID: "evt-3", Type: EventStoryReviewPassed, StoryID: "story-1",
 		Timestamp: "2026-01-01T00:03:00Z",
 	})
-	store.Project(Event{
+	_ = store.Project(Event{
 		ID: "evt-4", Type: EventStoryQAFailed, StoryID: "story-1",
 		Timestamp: "2026-01-01T00:04:00Z",
 	})
@@ -746,7 +746,7 @@ func TestSQLiteStore_QAFailed(t *testing.T) {
 func TestSQLiteStore_ReqStatusTransitions(t *testing.T) {
 	store := newTestStore(t)
 
-	store.Project(Event{
+	_ = store.Project(Event{
 		ID:   "evt-1",
 		Type: EventReqSubmitted,
 		Payload: mustMarshal(t, ReqSubmittedPayload{
@@ -767,7 +767,7 @@ func TestSQLiteStore_ReqStatusTransitions(t *testing.T) {
 	}
 
 	for i, tc := range transitions {
-		store.Project(Event{
+		_ = store.Project(Event{
 			ID:      "evt-" + string(rune('A'+i)),
 			Type:    tc.evtType,
 			StoryID: "req-1",

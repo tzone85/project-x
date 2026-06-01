@@ -188,6 +188,7 @@ func TestNewRootCmd(t *testing.T) {
 	cmd := NewRootCmd()
 	if cmd == nil {
 		t.Fatal("NewRootCmd returned nil")
+		return
 	}
 	if cmd.Use != "px" {
 		t.Errorf("Use = %q, want %q", cmd.Use, "px")

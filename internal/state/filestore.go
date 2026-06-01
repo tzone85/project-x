@@ -38,7 +38,7 @@ func NewFileStore(path string) (*FileStore, error) {
 
 	events, err := loadEvents(path)
 	if err != nil {
-		file.Close()
+		_ = file.Close()
 		return nil, fmt.Errorf("filestore: load events: %w", err)
 	}
 
@@ -55,7 +55,7 @@ func loadEvents(path string) ([]Event, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	var events []Event
 	scanner := bufio.NewScanner(f)

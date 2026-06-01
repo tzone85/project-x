@@ -73,7 +73,7 @@ func loadAppliedVersions(db *sql.DB) (map[int]bool, error) {
 	if err != nil {
 		return nil, fmt.Errorf("query schema_migrations: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	applied := make(map[int]bool)
 	for rows.Next() {
@@ -137,7 +137,7 @@ func applyMigration(db *sql.DB, mf migrationFile) error {
 	}
 
 	if _, err := tx.Exec(string(data)); err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return fmt.Errorf("execute migration %s: %w", mf.filename, err)
 	}
 
@@ -145,7 +145,7 @@ func applyMigration(db *sql.DB, mf migrationFile) error {
 		"INSERT INTO schema_migrations (version) VALUES (?)",
 		mf.version,
 	); err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return fmt.Errorf("record migration %s: %w", mf.filename, err)
 	}
 

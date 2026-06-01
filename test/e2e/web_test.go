@@ -36,7 +36,7 @@ func waitFor200(t *testing.T, url string, timeout time.Duration) {
 	for time.Now().Before(deadline) {
 		resp, err := http.Get(url)
 		if err == nil {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			if resp.StatusCode == http.StatusOK {
 				return
 			}
@@ -126,7 +126,7 @@ func TestWebAPI_EndToEnd(t *testing.T) {
 			if err != nil {
 				t.Fatalf("GET %s: %v", ep, err)
 			}
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			if resp.StatusCode != http.StatusOK {
 				t.Errorf("GET %s: status %d", ep, resp.StatusCode)
 			}
@@ -174,7 +174,7 @@ func getJSON(t *testing.T, url string) map[string]any {
 	if err != nil {
 		t.Fatalf("GET %s: %v", url, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("GET %s: status %d", url, resp.StatusCode)
 	}
@@ -206,7 +206,7 @@ func getRaw(t *testing.T, url string) string {
 	if err != nil {
 		t.Fatalf("GET %s: %v", url, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		t.Fatalf("read %s: %v", url, err)

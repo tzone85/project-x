@@ -28,7 +28,7 @@ func setupTestApp(t *testing.T) string {
 	}
 	ps, err := state.NewSQLiteStore(filepath.Join(dir, "px.db"))
 	if err != nil {
-		es.Close()
+		_ = es.Close()
 		t.Fatalf("sqlite store: %v", err)
 	}
 	proj := state.NewProjector(ps, 16)
@@ -36,8 +36,8 @@ func setupTestApp(t *testing.T) string {
 
 	t.Cleanup(func() {
 		proj.Shutdown()
-		ps.Close()
-		es.Close()
+		_ = ps.Close()
+		_ = es.Close()
 	})
 
 	app = appState{
@@ -70,7 +70,7 @@ func captureStdout(t *testing.T, fn func()) string {
 	}()
 
 	fn()
-	w.Close()
+	_ = w.Close()
 	<-done
 	return buf.String()
 }

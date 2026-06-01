@@ -21,7 +21,7 @@ func setupTestHandlers(t *testing.T) *Handlers {
 	if err != nil {
 		t.Fatalf("NewSQLiteStore: %v", err)
 	}
-	t.Cleanup(func() { projStore.Close() })
+	t.Cleanup(func() { _ = projStore.Close() })
 
 	eventsDir := t.TempDir()
 	eventsPath := filepath.Join(eventsDir, "events.jsonl")
@@ -29,7 +29,7 @@ func setupTestHandlers(t *testing.T) *Handlers {
 	if err != nil {
 		t.Fatalf("NewFileStore: %v", err)
 	}
-	t.Cleanup(func() { eventStore.Close() })
+	t.Cleanup(func() { _ = eventStore.Close() })
 
 	db := projStore.DB()
 
@@ -260,7 +260,7 @@ func TestListStories_FilterByStatus(t *testing.T) {
 	seedStory(t, h, "s2", "r1", "Story 2")
 
 	// Assign s1 to change its status
-	h.projStore.Project(state.Event{
+	_ = h.projStore.Project(state.Event{
 		ID: "evt-assign", Type: state.EventStoryAssigned, StoryID: "s1",
 		Payload:   mustMarshalJSON(t, state.StoryAssignedPayload{AgentID: "a1", Wave: 1}),
 		Timestamp: "2026-01-01T00:03:00Z",

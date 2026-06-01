@@ -21,7 +21,7 @@ func findFreePort(t *testing.T) int {
 		t.Fatalf("find free port: %v", err)
 	}
 	port := ln.Addr().(*net.TCPAddr).Port
-	ln.Close()
+	_ = ln.Close()
 	return port
 }
 
@@ -30,14 +30,14 @@ func TestNewServer_DefaultConfig(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewSQLiteStore: %v", err)
 	}
-	t.Cleanup(func() { projStore.Close() })
+	t.Cleanup(func() { _ = projStore.Close() })
 
 	eventsPath := filepath.Join(t.TempDir(), "events.jsonl")
 	eventStore, err := state.NewFileStore(eventsPath)
 	if err != nil {
 		t.Fatalf("NewFileStore: %v", err)
 	}
-	t.Cleanup(func() { eventStore.Close() })
+	t.Cleanup(func() { _ = eventStore.Close() })
 
 	srv := NewServer(ServerConfig{
 		EventStore: eventStore,
@@ -55,14 +55,14 @@ func TestNewServer_CustomConfig(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewSQLiteStore: %v", err)
 	}
-	t.Cleanup(func() { projStore.Close() })
+	t.Cleanup(func() { _ = projStore.Close() })
 
 	eventsPath := filepath.Join(t.TempDir(), "events.jsonl")
 	eventStore, err := state.NewFileStore(eventsPath)
 	if err != nil {
 		t.Fatalf("NewFileStore: %v", err)
 	}
-	t.Cleanup(func() { eventStore.Close() })
+	t.Cleanup(func() { _ = eventStore.Close() })
 
 	srv := NewServer(ServerConfig{
 		Port:       9999,
@@ -82,14 +82,14 @@ func TestServer_StartAndShutdown(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewSQLiteStore: %v", err)
 	}
-	t.Cleanup(func() { projStore.Close() })
+	t.Cleanup(func() { _ = projStore.Close() })
 
 	eventsPath := filepath.Join(t.TempDir(), "events.jsonl")
 	eventStore, err := state.NewFileStore(eventsPath)
 	if err != nil {
 		t.Fatalf("NewFileStore: %v", err)
 	}
-	t.Cleanup(func() { eventStore.Close() })
+	t.Cleanup(func() { _ = eventStore.Close() })
 
 	port := findFreePort(t)
 
@@ -113,7 +113,7 @@ func TestServer_StartAndShutdown(t *testing.T) {
 	for time.Now().Before(deadline) {
 		resp, err := http.Get(addr + "/api/health")
 		if err == nil {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			if resp.StatusCode == http.StatusOK {
 				break
 			}
@@ -126,7 +126,7 @@ func TestServer_StartAndShutdown(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GET /api/health: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("health status: got %d, want 200", resp.StatusCode)
@@ -145,7 +145,7 @@ func TestServer_StartAndShutdown(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GET /api/requirements: %v", err)
 	}
-	defer resp2.Body.Close()
+	defer func() { _ = resp2.Body.Close() }()
 
 	if resp2.StatusCode != http.StatusOK {
 		t.Errorf("requirements status: got %d, want 200", resp2.StatusCode)
@@ -163,14 +163,14 @@ func TestServer_Broadcast(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewSQLiteStore: %v", err)
 	}
-	t.Cleanup(func() { projStore.Close() })
+	t.Cleanup(func() { _ = projStore.Close() })
 
 	eventsPath := filepath.Join(t.TempDir(), "events.jsonl")
 	eventStore, err := state.NewFileStore(eventsPath)
 	if err != nil {
 		t.Fatalf("NewFileStore: %v", err)
 	}
-	t.Cleanup(func() { eventStore.Close() })
+	t.Cleanup(func() { _ = eventStore.Close() })
 
 	srv := NewServer(ServerConfig{
 		Port:       findFreePort(t),

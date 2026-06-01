@@ -98,7 +98,7 @@ func (c *OpenAIClient) Complete(ctx context.Context, req CompletionRequest) (Com
 	if err != nil {
 		return CompletionResponse{}, fmt.Errorf("sending request: %w", err)
 	}
-	defer httpResp.Body.Close()
+	defer func() { _ = httpResp.Body.Close() }()
 
 	body, err := io.ReadAll(httpResp.Body)
 	if err != nil {

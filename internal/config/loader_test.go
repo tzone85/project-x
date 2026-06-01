@@ -117,7 +117,7 @@ func TestFindConfigFile_NoFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to get cwd: %v", err)
 	}
-	t.Cleanup(func() { os.Chdir(origDir) })
+	t.Cleanup(func() { _ = os.Chdir(origDir) })
 
 	dir := t.TempDir()
 	if err := os.Chdir(dir); err != nil {
@@ -135,7 +135,7 @@ func TestFindConfigFile_PxYaml(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to get cwd: %v", err)
 	}
-	t.Cleanup(func() { os.Chdir(origDir) })
+	t.Cleanup(func() { _ = os.Chdir(origDir) })
 
 	dir := t.TempDir()
 	// Resolve symlinks to handle macOS /var -> /private/var.

@@ -41,7 +41,7 @@ func (a *cliModelSwitchApprover) ApproveSwitch(req modelswitch.Request) (bool, e
 		)
 	}
 	if inputFile != os.Stdin {
-		defer inputFile.Close()
+		defer func() { _ = inputFile.Close() }()
 	}
 
 	fmt.Println()

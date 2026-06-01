@@ -50,8 +50,10 @@ func (h *SSEHub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	// Send initial connection confirmation.
-	fmt.Fprintf(w, "data: {\"type\":\"connected\"}\n\n")
+	// Send initial connection confirmation. Errors from Fprintf are ignored
+	// because the only failure mode is the client disconnecting, which the
+	// next loop iteration already handles via r.Context().Done().
+	_, _ = fmt.Fprintf(w, "data: {\"type\":\"connected\"}\n\n")
 	flusher.Flush()
 
 	for {
@@ -62,7 +64,7 @@ func (h *SSEHub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if !ok {
 				return
 			}
-			fmt.Fprintf(w, "data: %s\n\n", msg)
+			_, _ = fmt.Fprintf(w, "data: %s\n\n", msg)
 			flusher.Flush()
 		}
 	}

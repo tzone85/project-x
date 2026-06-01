@@ -13,7 +13,7 @@ func openTestDB(t *testing.T) *sql.DB {
 	if err != nil {
 		t.Fatalf("open db: %v", err)
 	}
-	t.Cleanup(func() { db.Close() })
+	t.Cleanup(func() { _ = db.Close() })
 	return db
 }
 
@@ -71,7 +71,7 @@ func TestMigrator_TracksVersions(t *testing.T) {
 	if err != nil {
 		t.Fatalf("query versions: %v", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var versions []int
 	for rows.Next() {

@@ -36,12 +36,6 @@ var (
 				Padding(0, 1)
 )
 
-// Panel border style.
-var panelBorderStyle = lipgloss.NewStyle().
-	Border(lipgloss.RoundedBorder()).
-	BorderForeground(colorCyan).
-	Padding(0, 1)
-
 // Status bar at the bottom.
 var statusBarStyle = lipgloss.NewStyle().
 	Foreground(colorDimWhite).

@@ -69,7 +69,7 @@ func TestPoller_DetectsCompletedAgent(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
 
-	p.Run(ctx, agents, ".")
+	_ = p.Run(ctx, agents, ".")
 
 	pr.mu.Lock()
 	defer pr.mu.Unlock()
@@ -100,7 +100,7 @@ func TestPoller_GracefulShutdown(t *testing.T) {
 
 	done := make(chan struct{})
 	go func() {
-		p.Run(ctx, agents, ".")
+		_ = p.Run(ctx, agents, ".")
 		close(done)
 	}()
 
@@ -156,7 +156,7 @@ func TestPoller_SerializedMerge(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
 
-	p.Run(ctx, agents, ".")
+	_ = p.Run(ctx, agents, ".")
 
 	pr.mu.Lock()
 	defer pr.mu.Unlock()
@@ -192,7 +192,7 @@ func TestPoller_MissingSessionWithSentinelTriggersPipeline(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
-	p.Run(ctx, agents, ".")
+	_ = p.Run(ctx, agents, ".")
 
 	pr.mu.Lock()
 	defer pr.mu.Unlock()
@@ -224,7 +224,7 @@ func TestPoller_DeadSessionSkipsPipeline(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
 	defer cancel()
 
-	p.Run(ctx, agents, ".")
+	_ = p.Run(ctx, agents, ".")
 
 	pr.mu.Lock()
 	defer pr.mu.Unlock()

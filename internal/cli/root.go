@@ -137,7 +137,7 @@ func initApp() error {
 	dbPath := filepath.Join(stateDir, "px.db")
 	projStore, err := state.NewSQLiteStore(dbPath)
 	if err != nil {
-		eventStore.Close()
+		_ = eventStore.Close()
 		return fmt.Errorf("open projection store: %w", err)
 	}
 	app.projStore = projStore

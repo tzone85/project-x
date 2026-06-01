@@ -27,16 +27,16 @@ func NewSQLiteStore(dsn string) (*SQLiteStore, error) {
 	}
 
 	if _, err := db.Exec("PRAGMA journal_mode=WAL"); err != nil {
-		db.Close()
+		_ = db.Close()
 		return nil, fmt.Errorf("set WAL mode: %w", err)
 	}
 	if _, err := db.Exec("PRAGMA busy_timeout=5000"); err != nil {
-		db.Close()
+		_ = db.Close()
 		return nil, fmt.Errorf("set busy timeout: %w", err)
 	}
 
 	if _, err := RunMigrations(db); err != nil {
-		db.Close()
+		_ = db.Close()
 		return nil, fmt.Errorf("run migrations: %w", err)
 	}
 
@@ -220,7 +220,7 @@ func (s *SQLiteStore) ListRequirements(filter ReqFilter) ([]Requirement, error) 
 	if err != nil {
 		return nil, fmt.Errorf("list requirements: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var reqs []Requirement
 	for rows.Next() {
@@ -394,7 +394,7 @@ func (s *SQLiteStore) ListStories(filter StoryFilter) ([]Story, error) {
 	if err != nil {
 		return nil, fmt.Errorf("list stories: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var stories []Story
 	for rows.Next() {
@@ -445,7 +445,7 @@ func (s *SQLiteStore) ListStoryDeps(reqID string) ([]StoryDep, error) {
 	if err != nil {
 		return nil, fmt.Errorf("list story deps for req %s: %w", reqID, err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var deps []StoryDep
 	for rows.Next() {
@@ -501,7 +501,7 @@ func (s *SQLiteStore) ListAgents(filter AgentFilter) ([]Agent, error) {
 	if err != nil {
 		return nil, fmt.Errorf("list agents: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var agents []Agent
 	for rows.Next() {
@@ -547,7 +547,7 @@ func (s *SQLiteStore) ListEscalations() ([]Escalation, error) {
 	if err != nil {
 		return nil, fmt.Errorf("list escalations: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var escs []Escalation
 	for rows.Next() {

@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -15,6 +18,7 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
+          cache: true
 
       - name: Install dependencies
         run: go mod download
@@ -24,16 +28,39 @@ jobs:
 
       - name: Lint
         uses: golangci/golangci-lint-action@v7
-        continue-on-error: true
         with:
           version: v2.1
           install-mode: goinstall
 
       - name: Test
-        run: go test ./... -race -coverprofile=coverage.out
+        run: go test ./... -race -coverprofile=coverage.out -covermode=atomic
 
-      - name: Check coverage
+      - name: Coverage gate
         run: |
           COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | tr -d '%')
           echo "Total coverage: ${COVERAGE}%"
-          # Note: 80% gate on core packages; total may be lower due to CLI/UI
+          MIN=75
+          awk -v c="$COVERAGE" -v m="$MIN" 'BEGIN { if (c+0 < m+0) { print "coverage " c "% below minimum " m "%"; exit 1 } }'
+
+      - name: Upload coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage.out
+          retention-days: 7
+
+  vuln:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: govulncheck
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck ./...

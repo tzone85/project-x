@@ -30,7 +30,7 @@ func setupTestDB(t *testing.T) *sql.DB {
 	if err != nil {
 		t.Fatalf("create table: %v", err)
 	}
-	t.Cleanup(func() { db.Close() })
+	t.Cleanup(func() { _ = db.Close() })
 	return db
 }
 
@@ -61,9 +61,9 @@ func TestLedger_QueryByRequirement(t *testing.T) {
 	db := setupTestDB(t)
 	ledger := NewSQLiteLedger(db, DefaultPricing)
 
-	ledger.Record(TokenUsage{ReqID: "r1", StoryID: "s1", Model: "gpt-4o-mini", InputTokens: 1000, OutputTokens: 500})
-	ledger.Record(TokenUsage{ReqID: "r1", StoryID: "s2", Model: "gpt-4o-mini", InputTokens: 2000, OutputTokens: 1000})
-	ledger.Record(TokenUsage{ReqID: "r2", StoryID: "s3", Model: "gpt-4o-mini", InputTokens: 500, OutputTokens: 250})
+	_ = ledger.Record(TokenUsage{ReqID: "r1", StoryID: "s1", Model: "gpt-4o-mini", InputTokens: 1000, OutputTokens: 500})
+	_ = ledger.Record(TokenUsage{ReqID: "r1", StoryID: "s2", Model: "gpt-4o-mini", InputTokens: 2000, OutputTokens: 1000})
+	_ = ledger.Record(TokenUsage{ReqID: "r2", StoryID: "s3", Model: "gpt-4o-mini", InputTokens: 500, OutputTokens: 250})
 
 	total, err := ledger.QueryByRequirement("r1")
 	if err != nil {
@@ -84,7 +84,7 @@ func TestLedger_QueryByDay(t *testing.T) {
 	db := setupTestDB(t)
 	ledger := NewSQLiteLedger(db, DefaultPricing)
 
-	ledger.Record(TokenUsage{ReqID: "r1", StoryID: "s1", Model: "gpt-4o-mini", InputTokens: 1000, OutputTokens: 500})
+	_ = ledger.Record(TokenUsage{ReqID: "r1", StoryID: "s1", Model: "gpt-4o-mini", InputTokens: 1000, OutputTokens: 500})
 
 	total, err := ledger.QueryByDay(time.Now().Format("2006-01-02"))
 	if err != nil {

@@ -250,10 +250,10 @@ func buildPlannerPrompt(requirement, techStackInfo string, cfg PlannerConfig, va
 	}
 
 	if cfg.MaxStoryComplexity > 0 {
-		b.WriteString(fmt.Sprintf("\n## Constraints\n\n- Maximum complexity per story: %d\n", cfg.MaxStoryComplexity))
+		fmt.Fprintf(&b, "\n## Constraints\n\n- Maximum complexity per story: %d\n", cfg.MaxStoryComplexity)
 	}
 	if cfg.MaxStoriesPerRequirement > 0 {
-		b.WriteString(fmt.Sprintf("- Maximum stories per requirement: %d\n", cfg.MaxStoriesPerRequirement))
+		fmt.Fprintf(&b, "- Maximum stories per requirement: %d\n", cfg.MaxStoriesPerRequirement)
 	}
 	if cfg.EnforceFileOwnership {
 		b.WriteString("- File ownership must be non-overlapping (no two stories may own the same file)\n")

@@ -58,7 +58,7 @@ func TestRenderActivity_NewestFirst(t *testing.T) {
 	idx1 := strings.Index(out, "12:00:00")
 	idx2 := strings.Index(out, "11:00:00")
 	idx3 := strings.Index(out, "10:00:00")
-	if !(idx1 < idx2 && idx2 < idx3) {
+	if idx1 >= idx2 || idx2 >= idx3 {
 		t.Errorf("expected newest first; positions: 12=%d 11=%d 10=%d in %q", idx1, idx2, idx3, out)
 	}
 	if !strings.Contains(out, "Recent Events (3)") {

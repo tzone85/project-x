@@ -14,6 +14,7 @@ func TestNewCLIModelSwitchApprover_InitMap(t *testing.T) {
 	a := newCLIModelSwitchApprover()
 	if a == nil {
 		t.Fatal("nil approver")
+		return
 	}
 	if a.decisions == nil {
 		t.Error("decisions map not initialized")
@@ -66,14 +67,14 @@ func TestApproveSwitch_NoTTYRejected(t *testing.T) {
 	os.Stdin = r
 	t.Cleanup(func() {
 		os.Stdin = origStdin
-		w.Close()
+		_ = w.Close()
 	})
 
 	// If we're running in an environment where /dev/tty IS openable, the
 	// approver may instead attempt to read from it. To avoid blocking, write
 	// "n" to the read end so the prompt gets an answer.
 	_, _ = w.WriteString("n\n")
-	w.Close()
+	_ = w.Close()
 
 	req := modelswitch.Request{
 		Scope:          modelswitch.ScopeLLM,
@@ -100,7 +101,7 @@ func withStubApprovalInput(t *testing.T, response string) {
 			return nil, nil, err
 		}
 		_, _ = w.WriteString(response)
-		w.Close()
+		_ = w.Close()
 		return r, bufio.NewReader(r), nil
 	}
 	t.Cleanup(func() { approvalInputOpener = prev })
@@ -213,7 +214,7 @@ func TestApproveSwitch_ReadError(t *testing.T) {
 	approvalInputOpener = func() (*os.File, *bufio.Reader, error) {
 		// Pipe with empty content + immediate close → ReadString returns io.EOF.
 		r, w, _ := os.Pipe()
-		w.Close()
+		_ = w.Close()
 		return r, bufio.NewReader(r), nil
 	}
 	t.Cleanup(func() { approvalInputOpener = prev })
@@ -235,8 +236,8 @@ func TestStdinIsInteractive_ClosedFD_ReturnsFalse(t *testing.T) {
 	origStdin := os.Stdin
 	os.Stdin = r
 	t.Cleanup(func() { os.Stdin = origStdin })
-	r.Close()
-	w.Close()
+	_ = r.Close()
+	_ = w.Close()
 
 	if stdinIsInteractive() {
 		t.Error("closed stdin should not report as interactive")
@@ -251,7 +252,7 @@ func TestStdinIsInteractive_Pipe(t *testing.T) {
 	os.Stdin = r
 	t.Cleanup(func() {
 		os.Stdin = origStdin
-		w.Close()
+		_ = w.Close()
 	})
 	if stdinIsInteractive() {
 		t.Error("piped stdin should not report as interactive")
@@ -264,7 +265,7 @@ func TestOpenApprovalInput_PipeFallsBackToTTYOrErrors(t *testing.T) {
 	os.Stdin = r
 	t.Cleanup(func() {
 		os.Stdin = origStdin
-		w.Close()
+		_ = w.Close()
 	})
 
 	f, reader, err := openApprovalInput()

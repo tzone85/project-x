@@ -462,7 +462,7 @@ func TestFetchDataCmd_WithDB(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open db: %v", err)
 	}
-	t.Cleanup(func() { db.Close() })
+	t.Cleanup(func() { _ = db.Close() })
 	if _, err := db.Exec(`CREATE TABLE token_usage (req_id TEXT, cost_usd REAL, created_at TEXT)`); err != nil {
 		t.Fatalf("create table: %v", err)
 	}

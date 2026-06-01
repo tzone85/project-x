@@ -101,7 +101,7 @@ func (c *AnthropicClient) Complete(ctx context.Context, req CompletionRequest) (
 	if err != nil {
 		return CompletionResponse{}, fmt.Errorf("sending request: %w", err)
 	}
-	defer httpResp.Body.Close()
+	defer func() { _ = httpResp.Body.Close() }()
 
 	body, err := io.ReadAll(httpResp.Body)
 	if err != nil {

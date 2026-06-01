@@ -103,7 +103,7 @@ func (r *Runner) handleExhaustion(
 ) (StageResult, error) {
 	switch onExhaust {
 	case "escalate":
-		r.events.Append(state.NewEvent(
+		_ = r.events.Append(state.NewEvent(
 			state.EventEscalationCreated,
 			"pipeline",
 			sc.StoryID,

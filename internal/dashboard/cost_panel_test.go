@@ -122,7 +122,7 @@ func TestQueryCostData_RealSQLite(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open db: %v", err)
 	}
-	t.Cleanup(func() { db.Close() })
+	t.Cleanup(func() { _ = db.Close() })
 
 	mustExec := func(q string) {
 		t.Helper()
@@ -165,7 +165,7 @@ func TestQueryCostData_MissingTable(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open db: %v", err)
 	}
-	t.Cleanup(func() { db.Close() })
+	t.Cleanup(func() { _ = db.Close() })
 
 	// No token_usage table — every query errors → costs default to 0.
 	data := queryCostData(db, []state.Requirement{{ID: "r-1"}}, 5.0)

@@ -36,8 +36,5 @@ func IsFatalAPIError(err error) bool {
 		return !apiErr.Retryable
 	}
 	var budgetErr *BudgetExhaustedError
-	if errors.As(err, &budgetErr) {
-		return true
-	}
-	return false
+	return errors.As(err, &budgetErr)
 }

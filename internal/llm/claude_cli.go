@@ -204,10 +204,8 @@ func trimCodeFences(s string) string {
 	}
 	s = s[firstNewline+1:]
 
-	// Remove closing fence if present
-	if strings.HasSuffix(s, "```") {
-		s = s[:len(s)-3]
-	}
+	// Remove closing fence if present.
+	s = strings.TrimSuffix(s, "```")
 
 	return strings.TrimSpace(s)
 }

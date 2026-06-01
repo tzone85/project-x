@@ -35,7 +35,7 @@ func TestProject_EveryDeclaredEventTypeIsWired(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open store: %v", err)
 	}
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	for _, et := range declared {
 		t.Run(string(et), func(t *testing.T) {
@@ -78,7 +78,7 @@ func TestProject_UnknownEventTypeIsAcceptedQuietly(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open store: %v", err)
 	}
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	evt := NewEvent(EventType("totally.made.up"), "a", "s", map[string]any{"id": "x"})
 	if err := store.Project(evt); err != nil {

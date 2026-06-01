@@ -9,6 +9,7 @@ func TestNewScrollableViewport_DefaultHeight(t *testing.T) {
 	v := NewScrollableViewport()
 	if v == nil {
 		t.Fatal("expected non-nil viewport")
+		return
 	}
 	if v.height != 10 {
 		t.Errorf("default height = %d, want 10", v.height)

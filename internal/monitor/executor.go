@@ -197,11 +197,11 @@ func buildClaudeMD(a Assignment, story planner.PlannedStory) string {
 	b.WriteString("- Commit your work when the acceptance criteria are met\n")
 	b.WriteString("- Do NOT modify files outside the scope of this story\n\n")
 
-	b.WriteString(fmt.Sprintf("## Story: %s\n\n", story.Title))
-	b.WriteString(fmt.Sprintf("**ID:** %s\n", a.StoryID))
-	b.WriteString(fmt.Sprintf("**Branch:** %s\n", a.Branch))
-	b.WriteString(fmt.Sprintf("**Role:** %s\n", string(a.Role)))
-	b.WriteString(fmt.Sprintf("**Wave:** %d\n\n", a.Wave))
+	fmt.Fprintf(&b, "## Story: %s\n\n", story.Title)
+	fmt.Fprintf(&b, "**ID:** %s\n", a.StoryID)
+	fmt.Fprintf(&b, "**Branch:** %s\n", a.Branch)
+	fmt.Fprintf(&b, "**Role:** %s\n", string(a.Role))
+	fmt.Fprintf(&b, "**Wave:** %d\n\n", a.Wave)
 
 	if story.Description != "" {
 		b.WriteString("### Description\n\n")
@@ -218,7 +218,7 @@ func buildClaudeMD(a Assignment, story planner.PlannedStory) string {
 	if len(story.OwnedFiles) > 0 {
 		b.WriteString("### Owned Files\n\n")
 		for _, f := range story.OwnedFiles {
-			b.WriteString(fmt.Sprintf("- %s\n", f))
+			fmt.Fprintf(&b, "- %s\n", f)
 		}
 		b.WriteString("\n")
 	}

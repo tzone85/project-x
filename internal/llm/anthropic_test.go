@@ -87,7 +87,7 @@ func TestAnthropicClient_Complete_Success(t *testing.T) {
 				"output_tokens": 42,
 			},
 		}
-		json.NewEncoder(w).Encode(resp)
+		_ = json.NewEncoder(w).Encode(resp)
 	}))
 	defer server.Close()
 
@@ -133,7 +133,7 @@ func TestAnthropicClient_Complete_CustomModel(t *testing.T) {
 			"model": "claude-opus-4-20250514",
 			"usage": map[string]int{"input_tokens": 10, "output_tokens": 5},
 		}
-		json.NewEncoder(w).Encode(resp)
+		_ = json.NewEncoder(w).Encode(resp)
 	}))
 	defer server.Close()
 
@@ -161,7 +161,7 @@ func TestAnthropicClient_Complete_ErrorResponse(t *testing.T) {
 				"message": "max_tokens must be a positive integer",
 			},
 		}
-		json.NewEncoder(w).Encode(resp)
+		_ = json.NewEncoder(w).Encode(resp)
 	}))
 	defer server.Close()
 
@@ -198,7 +198,7 @@ func TestAnthropicClient_Complete_AuthFailure401(t *testing.T) {
 				"message": "invalid x-api-key",
 			},
 		}
-		json.NewEncoder(w).Encode(resp)
+		_ = json.NewEncoder(w).Encode(resp)
 	}))
 	defer server.Close()
 
@@ -232,7 +232,7 @@ func TestAnthropicClient_Complete_RateLimit429(t *testing.T) {
 				"message": "rate limit exceeded",
 			},
 		}
-		json.NewEncoder(w).Encode(resp)
+		_ = json.NewEncoder(w).Encode(resp)
 	}))
 	defer server.Close()
 
@@ -266,7 +266,7 @@ func TestAnthropicClient_Complete_ServerError500(t *testing.T) {
 				"message": "internal server error",
 			},
 		}
-		json.NewEncoder(w).Encode(resp)
+		_ = json.NewEncoder(w).Encode(resp)
 	}))
 	defer server.Close()
 
@@ -300,7 +300,7 @@ func TestAnthropicClient_Complete_ServiceUnavailable503(t *testing.T) {
 				"message": "service temporarily unavailable",
 			},
 		}
-		json.NewEncoder(w).Encode(resp)
+		_ = json.NewEncoder(w).Encode(resp)
 	}))
 	defer server.Close()
 
@@ -336,7 +336,7 @@ func TestAnthropicClient_Complete_TokenExtraction(t *testing.T) {
 				"output_tokens": 5678,
 			},
 		}
-		json.NewEncoder(w).Encode(resp)
+		_ = json.NewEncoder(w).Encode(resp)
 	}))
 	defer server.Close()
 
@@ -363,7 +363,7 @@ func TestAnthropicClient_Complete_EmptyContentArray(t *testing.T) {
 			"model":   "claude-sonnet-4-20250514",
 			"usage":   map[string]int{"input_tokens": 10, "output_tokens": 0},
 		}
-		json.NewEncoder(w).Encode(resp)
+		_ = json.NewEncoder(w).Encode(resp)
 	}))
 	defer server.Close()
 
@@ -390,7 +390,7 @@ func TestAnthropicClient_Complete_MultipleContentBlocks(t *testing.T) {
 			"model": "claude-sonnet-4-20250514",
 			"usage": map[string]int{"input_tokens": 10, "output_tokens": 20},
 		}
-		json.NewEncoder(w).Encode(resp)
+		_ = json.NewEncoder(w).Encode(resp)
 	}))
 	defer server.Close()
 
@@ -430,7 +430,7 @@ func TestAnthropicClient_Complete_ContextCancelled(t *testing.T) {
 func TestAnthropicClient_Complete_NonJSONErrorBody(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadGateway)
-		w.Write([]byte("Bad Gateway"))
+		_, _ = w.Write([]byte("Bad Gateway"))
 	}))
 	defer server.Close()
 
@@ -472,7 +472,7 @@ func TestAnthropicClient_Complete_RequestBody_MaxTokensDefault(t *testing.T) {
 			"model":   "claude-sonnet-4-20250514",
 			"usage":   map[string]int{"input_tokens": 1, "output_tokens": 1},
 		}
-		json.NewEncoder(w).Encode(resp)
+		_ = json.NewEncoder(w).Encode(resp)
 	}))
 	defer server.Close()
 
@@ -506,7 +506,7 @@ func TestAnthropicClient_Complete_RequestBody_CustomMaxTokens(t *testing.T) {
 			"model":   "claude-sonnet-4-20250514",
 			"usage":   map[string]int{"input_tokens": 1, "output_tokens": 1},
 		}
-		json.NewEncoder(w).Encode(resp)
+		_ = json.NewEncoder(w).Encode(resp)
 	}))
 	defer server.Close()
 

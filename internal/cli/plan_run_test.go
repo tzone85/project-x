@@ -153,7 +153,7 @@ func TestRunPlanRefine_EventStoreClosed(t *testing.T) {
 	orig := os.Stdin
 	os.Stdin = rPipe
 	t.Cleanup(func() { os.Stdin = orig })
-	go func() { _, _ = w.WriteString("redo it\n"); w.Close() }()
+	go func() { _, _ = w.WriteString("redo it\n"); _ = w.Close() }()
 
 	if err := app.eventStore.Close(); err != nil {
 		t.Fatalf("close: %v", err)
@@ -246,7 +246,7 @@ func TestRunPlanRefine_EmptyFeedback(t *testing.T) {
 	orig := os.Stdin
 	os.Stdin = r
 	t.Cleanup(func() { os.Stdin = orig })
-	w.Close()
+	_ = w.Close()
 
 	captureStdout(t, func() {
 		err := runPlanRefine(context.Background(), "ANY")
@@ -262,7 +262,7 @@ func TestRunPlanRefine_MissingRequirement(t *testing.T) {
 	orig := os.Stdin
 	os.Stdin = r
 	t.Cleanup(func() { os.Stdin = orig })
-	go func() { _, _ = w.WriteString("more strict tests please\n"); w.Close() }()
+	go func() { _, _ = w.WriteString("more strict tests please\n"); _ = w.Close() }()
 
 	captureStdout(t, func() {
 		err := runPlanRefine(context.Background(), "DOES-NOT-EXIST")
@@ -290,7 +290,7 @@ func TestRunPlanRefine_Success(t *testing.T) {
 	orig := os.Stdin
 	os.Stdin = rPipe
 	t.Cleanup(func() { os.Stdin = orig })
-	go func() { _, _ = w.WriteString("smaller stories please\n"); w.Close() }()
+	go func() { _, _ = w.WriteString("smaller stories please\n"); _ = w.Close() }()
 
 	out := captureStdout(t, func() {
 		if err := runPlanRefine(context.Background(), "R-REF"); err != nil {
@@ -315,7 +315,7 @@ func TestRunPlanRefine_LLMError(t *testing.T) {
 	orig := os.Stdin
 	os.Stdin = rPipe
 	t.Cleanup(func() { os.Stdin = orig })
-	go func() { _, _ = w.WriteString("more tests\n"); w.Close() }()
+	go func() { _, _ = w.WriteString("more tests\n"); _ = w.Close() }()
 
 	err := runPlanRefine(context.Background(), "R-LLE")
 	if err == nil || !strings.Contains(err.Error(), "re-planning failed") {
@@ -340,7 +340,7 @@ func TestPlanCmd_RefineFlag(t *testing.T) {
 	orig := os.Stdin
 	os.Stdin = r
 	t.Cleanup(func() { os.Stdin = orig })
-	w.Close()
+	_ = w.Close()
 
 	cmd := newPlanCmd()
 	cmd.SetArgs([]string{"--refine", "ANY"})

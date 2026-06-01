@@ -211,7 +211,7 @@ func runWaveLoop(ctx context.Context, d waveLoopDeps) error {
 				"agent_id": a.AgentID,
 				"wave":     waveNumber,
 			})
-			app.eventStore.Append(evt)
+			_ = app.eventStore.Append(evt)
 			app.projector.Send(evt)
 		}
 
@@ -256,7 +256,7 @@ func runWaveLoop(ctx context.Context, d waveLoopDeps) error {
 
 	if len(d.completed) == len(d.stories) {
 		compEvt := state.NewEvent(state.EventReqCompleted, "monitor", "", map[string]any{"id": d.reqID})
-		app.eventStore.Append(compEvt)
+		_ = app.eventStore.Append(compEvt)
 		app.projector.Send(compEvt)
 		fmt.Printf("\nAll %d stories complete! Requirement %s is done.\n", len(d.stories), d.reqID)
 

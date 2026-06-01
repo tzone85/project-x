@@ -34,7 +34,7 @@ func TestTruncateForTitle_TruncatesAtWordBoundary(t *testing.T) {
 		t.Errorf("expected '...' suffix, got %q", got)
 	}
 	if strings.Contains(got, "fox") && !strings.HasSuffix(got, "fox...") {
-		// At word boundary <= 20
+		t.Errorf("expected truncation at word boundary 'fox...', got %q", got)
 	}
 	if len(got) > 23 {
 		t.Errorf("output exceeded max+3, got %q (len=%d)", got, len(got))
@@ -119,7 +119,7 @@ func TestReadRequirement_StdinDash(t *testing.T) {
 
 	go func() {
 		_, _ = w.WriteString("hello via stdin\n")
-		w.Close()
+		_ = w.Close()
 	}()
 
 	got, err := readRequirement("-")
@@ -139,7 +139,7 @@ func TestReadRequirement_StdinEmpty(t *testing.T) {
 	origStdin := os.Stdin
 	os.Stdin = r
 	t.Cleanup(func() { os.Stdin = origStdin })
-	w.Close()
+	_ = w.Close()
 
 	if _, err := readRequirement("-"); err == nil {
 		t.Error("empty stdin should error")

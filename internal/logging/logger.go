@@ -36,7 +36,7 @@ func Setup(level string, logDir string) (func(), error) {
 
 	cleanup := func() {
 		if logFile != nil {
-			logFile.Close()
+			_ = logFile.Close()
 		}
 	}
 	return cleanup, nil
