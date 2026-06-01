@@ -65,6 +65,7 @@ func NewServer(cfg ServerConfig) *Server {
 	mux.HandleFunc("GET /api/about", h.GetAbout)
 	mux.HandleFunc("GET /api/logs", h.GetLogs)
 	mux.HandleFunc("GET /api/stream", hub.ServeHTTP)
+	mux.HandleFunc("GET /metrics", h.GetMetrics)
 
 	// Static files (embedded dashboard assets).
 	mux.Handle("GET /", staticHandler())

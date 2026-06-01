@@ -2,6 +2,7 @@ package monitor
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -210,6 +211,14 @@ func (p *Poller) runPipelineForCompletedAgent(ctx context.Context, wg *sync.Wait
 	wg.Add(1)
 	go func(a ActiveAgent) {
 		defer wg.Done()
+		defer func() {
+			if r := recover(); r != nil {
+				slog.Error("pipeline goroutine panic",
+					"story", a.Assignment.StoryID,
+					"agent", a.Assignment.AgentID,
+					"panic", fmt.Sprintf("%v", r))
+			}
+		}()
 		p.mergeMu.Lock()
 		defer p.mergeMu.Unlock()
 
