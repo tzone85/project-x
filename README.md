@@ -102,15 +102,24 @@ The repo also includes the same settings in [`px.config.example.yaml`](px.config
 ### Install
 
 ```bash
-# From source (recommended)
+# Homebrew (macOS + Linux)
+brew install tzone85/tap/px
+
+# Go install
+go install github.com/tzone85/px-dispatch/cmd/px@latest
+
+# Docker (multi-arch, includes tmux/git/gh)
+docker pull ghcr.io/tzone85/px-dispatch:latest
+
+# From source
 git clone https://github.com/tzone85/px-dispatch.git
 cd px-dispatch
-make build
-sudo mv px /usr/local/bin/
-
-# Or via go install
-go install github.com/tzone85/px-dispatch/cmd/px@latest
+make build && sudo mv px /usr/local/bin/
 ```
+
+Pre-built binaries for darwin/linux/windows × amd64/arm64 are attached
+to each [GitHub Release](https://github.com/tzone85/px-dispatch/releases)
+with SHA-256 checksums and an SBOM.
 
 ### First Run
 
@@ -437,6 +446,18 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for code style, PR process, and architect
 - [ ] Supervisor agent for drift detection and reprioritization
 
 ---
+
+## Security
+
+Please report vulnerabilities privately via the **Security** tab on this
+repository (*Report a vulnerability*). Do not file public issues for
+suspected security bugs. Maintainers aim to respond within 7 days; we ask
+for coordinated disclosure so a fix can ship before details go public.
+
+## Code of Conduct
+
+This project follows the [Contributor Covenant 2.1](https://www.contributor-covenant.org/version/2/1/code_of_conduct/).
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for details.
 
 ## License
 

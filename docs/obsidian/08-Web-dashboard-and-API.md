@@ -18,6 +18,7 @@ tags: [px-dispatch, web, dashboard]
 | `GET /api/escalations` | Open + resolved escalations |
 | `GET /api/cost?req_id=…&story_id=…` | Daily / req / story cost in USD |
 | `GET /api/stream` | Server-Sent Events stream |
+| `GET /metrics` | Prometheus text — build info, uptime, status counts, cost totals |
 | `GET /` | embedded SPA |
 
 The SPA is bundled with `//go:embed`, so `./px dashboard --web` works on a
@@ -45,6 +46,27 @@ data, different shell.
 
 Pick **web** when you want a watch window or to share the URL. Pick **TUI**
 when you're already in a terminal flow or remote-tunnelled.
+
+## Metrics endpoint (`GET /metrics`)
+
+Returns plain-text Prometheus exposition format — no extra dependency
+needed at the scraper side. Use this for local Grafana dashboards or to
+trip alerts when the orchestrator is running unattended.
+
+Series exposed:
+
+- `px_build_info{version="…"}` — gauge, always `1`; carry-tag for build version
+- `px_uptime_seconds` — gauge, seconds since process start
+- `px_requirements_total{status="…"}` — gauge, per-status row count
+- `px_stories_total{status="…"}` — gauge
+- `px_agents_total{status="…"}` — gauge
+- `px_escalations_total` — gauge
+- `px_cost_usd_total` — counter, sum of `token_usage.cost_usd`
+- `px_cost_usd_today` — gauge, UTC-day window of the above
+- `px_cost_daily_limit_usd` — gauge, when `budget.max_cost_per_day_usd` is set
+
+The handler reads directly from the SQLite projections; if no `px.db` is
+attached (e.g. unit-test wiring) only the build/uptime series are emitted.
 
 ## Server lifecycle
 

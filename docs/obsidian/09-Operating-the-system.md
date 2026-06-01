@@ -9,14 +9,24 @@ Practical guide to using `px` day-to-day.
 
 ## First-time setup
 
+Pick whichever install method fits your shell:
+
 ```bash
-go install github.com/tzone85/px-dispatch/cmd/px@latest
+brew install tzone85/tap/px                                  # macOS + Linux
+go install github.com/tzone85/px-dispatch/cmd/px@latest      # any Go env
+docker pull ghcr.io/tzone85/px-dispatch:latest               # containerised
+```
+
+Then bootstrap state:
+
+```bash
 px migrate
 px config show
 ```
 
 Required externals: `tmux`, `git` ≥ 2.30, `gh`, `claude` CLI (default
-runtime). Optional: `codex`, `gemini`.
+runtime). Optional: `codex`, `gemini`. No C toolchain needed at build
+time — `px` ships with pure-Go SQLite (`modernc.org/sqlite`).
 
 ## Writing a good requirement
 
@@ -97,3 +107,17 @@ budget:
 ```
 
 `px cost` shows where you stand.
+
+## Observability
+
+For longer unattended runs, scrape the metrics endpoint:
+
+```
+curl http://localhost:7890/metrics
+```
+
+Series include build info, uptime, per-status row counts for
+requirements/stories/agents, total escalations, and cost totals (day +
+all-time). See [[08-Web-dashboard-and-API#metrics-endpoint-get-metrics]]
+for the full list. Hook this into Prometheus + Grafana to alert when
+agents stay `stuck` or `px_cost_usd_today` approaches the budget.
