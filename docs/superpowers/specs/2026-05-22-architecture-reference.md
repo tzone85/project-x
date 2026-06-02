@@ -155,8 +155,9 @@ requested capabilities.
 | `GET /api/escalations` | Open + resolved escalations |
 | `GET /api/cost?req_id=…&story_id=…` | Daily / req / story cost in USD |
 | `GET /api/stream` | Server-Sent Events stream |
+| `GET /metrics` | Prometheus text exposition (build, uptime, status counts, cost totals) |
 
-Everything except `/api/stream` is plain JSON. The SPA is embedded via
+Everything except `/api/stream` and `/metrics` is plain JSON. The SPA is embedded via
 `//go:embed`, so the binary is self-contained.
 
 ---
