@@ -16,7 +16,7 @@ cleanup). State is event-sourced (JSONL append + SQLite projection). Live
 status streams to a TUI **and** a browser dashboard. Cost is enforced before
 every LLM call.
 
-See [architecture reference](2026-05-22-architecture-reference.md) for the
+See [architecture reference](architecture.md) for the
 deep dive, with rendered SVG diagrams.
 
 ---
@@ -125,7 +125,7 @@ keeps the public shape honest.
 | Browser SPA | `web/index.html`, `web/app.js`, `web/style.css` (embedded via go:embed) |
 | TUI panel | `internal/dashboard/` |
 | State schema (new event type) | `internal/state/events.go` + `state/sqlite.go` |
-| Architecture docs | `docs/superpowers/specs/2026-05-22-architecture-reference.md` + SVGs in `docs/diagrams/` |
+| Architecture docs | `docs/architecture.md` + SVGs in `docs/diagrams/` |
 
 ---
 
@@ -167,9 +167,6 @@ That's the rhythm.
 
 ## 9. Going further
 
-- Read `docs/superpowers/specs/2026-05-22-architecture-reference.md` for the
-  full deep dive.
-- Read `docs/superpowers/specs/2026-03-20-px-dispatch-v2-architecture-design.md`
-  for the original v2 design decisions.
+- Read `docs/architecture.md` for the full deep dive.
 - Browse `internal/state/events.go` to see every event the system can emit.
 - Run `./px events --limit 100` after `px resume` to watch the audit trail.

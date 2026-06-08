@@ -150,7 +150,7 @@ px dashboard --web           # Browser at http://localhost:7890
 
 The full requirement-to-merged-PR sequence is rendered below. For the
 deep-dive (component diagram, state model, extension points), see
-[docs/superpowers/specs/2026-05-22-architecture-reference.md](docs/superpowers/specs/2026-05-22-architecture-reference.md).
+[docs/architecture.md](docs/architecture.md).
 
 <p align="center">
   <img src="docs/diagrams/sequence.svg" alt="px sequence diagram" width="1000" />
@@ -291,14 +291,16 @@ px-dispatch/
 │   └── web/             # REST API + SSE + embedded SPA
 ├── docs/
 │   ├── diagrams/        # Rendered SVGs (architecture, sequence)
-│   └── superpowers/specs/  # Architecture + onboarding deep-dives
+│   ├── architecture.md  # Architecture deep-dive
+│   ├── obsidian/        # Systematic walkthrough (synced from vault)
+│   └── onboarding.md    # Clone-to-first-PR walkthrough
 ├── migrations/          # SQLite schema migrations (embedded)
 ├── web/                 # Browser dashboard (Alpine.js + Tailwind)
 └── test/e2e/            # End-to-end integration tests
 ```
 
 For a guided onboarding (clone → first PR), see
-[docs/superpowers/specs/2026-05-22-onboarding.md](docs/superpowers/specs/2026-05-22-onboarding.md).
+[docs/onboarding.md](docs/onboarding.md).
 
 ### Package Dependency Flow
 

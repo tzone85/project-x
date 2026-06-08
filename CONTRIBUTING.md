@@ -64,4 +64,4 @@ The repo must have the `HOMEBREW_TAP_GITHUB_TOKEN` secret set for the tap step t
 
 ## Architecture
 
-See [`docs/superpowers/specs/2026-05-22-architecture-reference.md`](docs/superpowers/specs/2026-05-22-architecture-reference.md) for the deep dive and [`docs/superpowers/specs/2026-05-22-onboarding.md`](docs/superpowers/specs/2026-05-22-onboarding.md) for first-PR onboarding.
+See [`docs/architecture.md`](docs/architecture.md) for the deep dive and [`docs/onboarding.md`](docs/onboarding.md) for first-PR onboarding.
