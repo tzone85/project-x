@@ -15,6 +15,29 @@ This project follows the [Contributor Covenant 2.1](https://www.contributor-cove
 5. Run tests: `make test`
 6. Build: `make build`
 
+### Windows (native PowerShell)
+
+```powershell
+# Build to %USERPROFILE%\.local\bin\px.exe (matches the Unix layout when WSL2
+# shares your home dir). Adjust the output path if you prefer %GOPATH%\bin.
+go build -o "$env:USERPROFILE\.local\bin\px.exe" ./cmd/px
+go test ./...
+```
+
+The `Makefile` is bash-only — use the `go` commands above on native Windows
+shells, or run `make` inside WSL2. Native Windows builds the binary cleanly but
+the agent execution pipeline (`px resume`) requires tmux, which has no native
+Windows port — use WSL2 for the full pipeline.
+
+### Cross-compiling a Windows binary from macOS / Linux
+
+```bash
+GOOS=windows GOARCH=amd64 go build -o dist/px.exe ./cmd/px
+```
+
+The resulting `.exe` is a valid PE32+ binary; copy it onto a Windows host or
+launch it through WSL's `/mnt/c/...` mount.
+
 ## Code style
 
 - Go formatting via `gofmt` and `go vet` is enforced by CI.
