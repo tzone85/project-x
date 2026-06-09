@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	goruntime "runtime"
 	"syscall"
 
 	"github.com/spf13/cobra"
@@ -16,6 +17,7 @@ import (
 	"github.com/tzone85/px-dispatch/internal/planner"
 	"github.com/tzone85/px-dispatch/internal/runtime"
 	"github.com/tzone85/px-dispatch/internal/state"
+	"github.com/tzone85/px-dispatch/internal/tmux"
 )
 
 func newResumeCmd() *cobra.Command {
@@ -36,6 +38,23 @@ func newResumeCmd() *cobra.Command {
 }
 
 func runResume(ctx context.Context, reqID string, godmode bool) error {
+	// 0. Preflight: the agent execution pipeline requires tmux. tmux has no
+	//    native Windows port, so on native Windows we point the operator to
+	//    WSL2 and refuse to proceed. Read-only commands (status, metrics,
+	//    cost, dashboard, events, config) continue to work without tmux.
+	if !tmux.AvailableOnHost() {
+		if goruntime.GOOS == "windows" {
+			return fmt.Errorf("tmux is not available on native Windows. " +
+				"The agent execution pipeline requires tmux; run PX inside WSL2 " +
+				"(Ubuntu) where you can `sudo apt install tmux`. Read-only " +
+				"commands (status, metrics, cost, dashboard, events, config) " +
+				"continue to work on native Windows")
+		}
+		return fmt.Errorf("tmux not found on PATH — install tmux " +
+			"(macOS: `brew install tmux`; Debian/Ubuntu: `sudo apt install tmux`) " +
+			"and retry")
+	}
+
 	// 1. Load requirement and validate it exists
 	req, err := app.projStore.GetRequirement(reqID)
 	if err != nil {

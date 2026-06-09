@@ -2,14 +2,31 @@ package tmux
 
 import (
 	"fmt"
+	"os/exec"
 	"strings"
 
 	"github.com/tzone85/px-dispatch/internal/git"
 )
 
-// Available reports whether the tmux binary is on PATH.
+// Available reports whether the tmux binary is on PATH. When a runner is
+// supplied (production calls pass git.ExecRunner; tests pass a mock), the
+// runner's view is authoritative. Callers wanting a host-level, cross-platform
+// answer that does not depend on the Unix `which` binary can pass nil to fall
+// back to exec.LookPath — used by AvailableOnHost below.
 func Available(runner git.CommandRunner) bool {
+	if runner == nil {
+		_, err := exec.LookPath("tmux")
+		return err == nil
+	}
 	_, err := runner.Run("", "which", "tmux")
+	return err == nil
+}
+
+// AvailableOnHost is a runner-free, cross-platform probe for `tmux` on PATH.
+// Prefer this in operator-facing preflight code, especially on Windows where
+// the Unix `which` command is not available.
+func AvailableOnHost() bool {
+	_, err := exec.LookPath("tmux")
 	return err == nil
 }
 

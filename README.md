@@ -67,6 +67,51 @@ The result: you describe what you want, and `px` produces merged PRs.
 
 ---
 
+## Platform Support
+
+| Platform | Build | Read-only commands | Full agent pipeline |
+|----------|-------|--------------------|---------------------|
+| macOS (Apple Silicon, Intel) | native | yes | yes |
+| Linux (x86_64, arm64) | native | yes | yes |
+| Windows 10/11 (native, no WSL) | `GOOS=windows go build` | yes | **no — requires tmux** |
+| Windows + WSL2 (Ubuntu/Debian) | inside WSL | yes | yes |
+
+PX's agent execution pipeline depends on tmux for session isolation, recovery,
+and live inspection, and tmux has no native Windows port. On native Windows the
+binary still builds and runs — `px status`, `px metrics`, `px cost`, `px events`,
+`px config`, `px dashboard`, and the planning commands all work — but `px resume`
+will refuse to start with a clear pointer to WSL2. The recommended Windows
+install path is WSL2 with Ubuntu, where the same Linux instructions below apply
+unchanged.
+
+### Windows install (read-only CLI on native Windows)
+
+```powershell
+go install github.com/tzone85/px-dispatch/cmd/px@latest
+# Resulting binary lives at %USERPROFILE%\go\bin\px.exe — ensure that
+# directory is on PATH (it is by default if you installed Go via the MSI).
+px migrate
+px status
+```
+
+State on Windows lives under `%USERPROFILE%\.px\` by default (override via
+`workspace.state_dir` in `px.yaml`).
+
+### Windows install (full pipeline via WSL2)
+
+```powershell
+# In an elevated PowerShell, one time:
+wsl --install -d Ubuntu
+```
+
+```bash
+# Inside the Ubuntu WSL shell:
+sudo apt update && sudo apt install -y tmux git build-essential gh
+# Install Go 1.22+ (apt's package may lag — see https://go.dev/dl).
+go install github.com/tzone85/px-dispatch/cmd/px@latest
+px migrate && px status
+```
+
 ## Quick Start
 
 ### Prerequisites
